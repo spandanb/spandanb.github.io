@@ -1,0 +1,77 @@
+
+
+/* ------------------------------------------------------------------ */
+/* Kreative: base.css
+/* ------------------------------------------------------------------ */
+
+.blog-row {
+   width: 96%;
+   max-width: 1008px;
+   margin: 0 auto;
+
+   -moz-box-sizing: border-box;
+   -webkit-box-sizing: border-box;
+   box-sizing: border-box;
+}
+.narblog-row .blog-row { max-width: 976px; }
+/* fixed width for IE8 */
+.ie .blog-row { width: 1008px ; }
+
+.blog-row .blog-row { width: auto; max-width: 100% }
+
+.blog-col {
+   position: relative;
+   padding: 0 18px;
+   float: left;
+}
+
+/* blog-row clearing */
+.blog-row:before,
+.blog-row:after {
+    content: " ";
+    display: table;
+}
+.blog-row:after {
+    clear: both;
+}
+/* For IE 6/7 (trigger hasLayout) */
+.blog-row { *zoom: 1; }
+
+
+/* removed gutters */
+.blog-row.blog-collapsed .blog-col,
+blog-col.blog-collapsed { padding: 0; }
+
+/* removed nested blog-columns paddings */
+.blog-col .blog-col:first-child { padding-left: 0; }
+.blog-col .blog-col:last-child { padding-right: 0; }
+/* If you'll be using IE8, use class ".last" in nested comlumns.
+   ":last-child" is not supported in IE8 */
+.ie .blog-row .blog-row .last { padding-right: 0; }
+
+/* blog-column widths */
+.blog-row .one-twelfth,     .blog-row .g-1     { width: 8.33333%; }
+.blog-row .one-sixth,       .blog-row .g-2     { width: 16.66667%; }
+.blog-row .one-fourth,      .blog-row .g-3     { width: 25%; }
+.blog-row .one-third,       .blog-row .g-4     { width: 33.33333%; }
+.blog-row .five-twelfths,   .blog-row .g-5     { width: 41.66667%; }
+.blog-row .half,            .blog-row .g-6     { width: 50%; }
+.blog-row .seven-twelfths,  .blog-row .g-7     { width: 58.33333%; }
+.blog-row .two-thirds,      .blog-row .g-8     { width: 66.66667%; }
+.blog-row .three-fourths,   .blog-row .g-9     { width: 75%; }
+.blog-row .five-sixths,     .blog-row .g-10    { width: 83.33333%; }
+.blog-row .eleven-twelfths, .blog-row .g-11    { width: 91.66667%; }
+.blog-row .full,            .blog-row .g-12    { width: 100%; }
+
+/* Offsets */
+.blog-row .offset-1    { margin-left: 8.33333%; }
+.blog-row .offset-2    { margin-left: 16.66667%; }
+.blog-row .offset-3    { margin-left: 25%; }
+.blog-row .offset-4    { margin-left: 33.33333%; }
+.blog-row .offset-5    { margin-left: 41.66667%; }
+.blog-row .offset-6    { margin-left: 50%; }
+.blog-row .offset-7    { margin-left: 58.33333%; }
+.blog-row .offset-8    { margin-left: 66.66667%; }
+.blog-row .offset-9    { margin-left: 75%; }
+.blog-row .offset-10   { margin-left: 83.33333%; }
+.blog-row .offset-11   { margin-left: 91.66667%; }
