@@ -98,47 +98,27 @@
                     </div>
                 </div>
                 
-                
+                {% for entry in projects %}
 
-                <!-- Item 1: Run Rabbit Run -->
+                <!-- Item {{loop.index}}: {{entry.title}} -->
                 <div class="row">
                     <div class="col-md-12 portfolio-item">
                         <h3>
-                            <a href="https://github.com/spandanb/runrabbitrun">
-                                Run Rabbit Run
+                            <a href="{{entry.link}}">
+                                {{entry.title}}
                             </a> 
                         </h3>
                         <p>
-                            A tracking system that provides runners real time feedback on their performance.
+                            {{entry.body}}
                         </p>
-                        <a href="https://github.com/spandanb/runrabbitrun">
+                        <a href="{{entry.link}}">
                             See Source Code
                         </a> 
                     </div>
                 </div>
                 <!--./row -->
 
-                
-
-                <!-- Item 2: Commandline Music Player -->
-                <div class="row">
-                    <div class="col-md-12 portfolio-item">
-                        <h3>
-                            <a href="https://github.com/spandanb/my-music-player">
-                                Commandline Music Player
-                            </a> 
-                        </h3>
-                        <p>
-                            A multi-modal command line music player inspired by Vim.
-                        </p>
-                        <a href="https://github.com/spandanb/my-music-player">
-                            See Source Code
-                        </a> 
-                    </div>
-                </div>
-                <!--./row -->
-
-                
+                {% endfor %}
 
                 <!-- divider -->
                 <div class="row page-header"></div>
@@ -151,19 +131,19 @@
                     </div>
                 </div>
 
+                {% for entry in blogposts %}
                 
-                
-                <!-- Item 1: What is Data Engineering? -->
+                <!-- Item {{loop.index}}: {{entry.title}} -->
                 <div class="row">
                     <div class="col-md-12 portfolio-item">
                         <h3>
-                            <a href="https://hackernoon.com/what-is-data-engineering-5334cec027d0#.n00m10ouj">
-                                What is Data Engineering?
+                            <a href="{{entry.link}}">
+                                {{entry.title}}
                             </a>
                         </h3>
                         <p>
-                            A few months ago, I decided that I wanted to pursue a career in data engineering. I was fascinated with data engineering because of all the big data tools being used, like Spark, but besides that, I knew very little. This is what I learned in the past 4 months.
-                            <a href="https://hackernoon.com/what-is-data-engineering-5334cec027d0#.n00m10ouj">
+                            {{entry.body}}
+                            <a href="{{entry.link}}">
                                 Read More
                             </a>
                         </p>
@@ -171,27 +151,7 @@
                 </div>
                 <!--./row -->
 
-                
-                
-                <!-- Item 2: Run Rabbit Run and the Things I Learned While Doing My First Big Data Project -->
-                <div class="row">
-                    <div class="col-md-12 portfolio-item">
-                        <h3>
-                            <a href="https://medium.com/@superspandan/run-rabbit-run-and-the-things-i-learned-while-doing-my-first-big-data-project-1db51267e9d3#.dm3cad33r">
-                                Run Rabbit Run and the Things I Learned While Doing My First Big Data Project
-                            </a>
-                        </h3>
-                        <p>
-                            A tracking system that provides runners real time feedback on their performance.
-                            <a href="https://medium.com/@superspandan/run-rabbit-run-and-the-things-i-learned-while-doing-my-first-big-data-project-1db51267e9d3#.dm3cad33r">
-                                Read More
-                            </a>
-                        </p>
-                    </div>
-                </div>
-                <!--./row -->
-
-                
+                {% endfor %}
 
             </div>
             <!--./col -->

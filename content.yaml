@@ -1,0 +1,24 @@
+
+
+projects:
+    - title: Run Rabbit Run
+      link: https://github.com/spandanb/runrabbitrun
+      body: A tracking system that provides runners real time 
+            feedback on their performance.
+
+    - title: Commandline Music Player
+      link: https://github.com/spandanb/my-music-player
+      body: A multi-modal command line music player inspired by Vim.
+
+
+blogposts:
+    - title: What is Data Engineering?
+      link: https://hackernoon.com/what-is-data-engineering-5334cec027d0#.n00m10ouj
+      body: A few months ago, I decided that I wanted to pursue a career in data engineering.
+            I was fascinated with data engineering because of all the big data tools being used,
+            like Spark, but besides that, I knew very little. This is what I learned in the past 4 months.
+                            
+    - title: Run Rabbit Run and the Things I Learned While Doing My First Big Data Project
+      link:  https://medium.com/@superspandan/run-rabbit-run-and-the-things-i-learned-while-doing-my-first-big-data-project-1db51267e9d3#.dm3cad33r                     
+      body: A tracking system that provides runners real time feedback on their performance.
+
