@@ -90,39 +90,6 @@
                     </div>    
                 </div>
 
-                                
-                <!-- Projects Header -->
-                <div id="projects-section" class="row">
-                    <div class="col-md-6 col-md-offset-3 portfolio-item">
-                        <h2>Projects</h2>                
-                    </div>
-                </div>
-                
-                {% for entry in projects %}
-
-                <!-- Item {{loop.index}}: {{entry.title}} -->
-                <div class="row">
-                    <div class="col-md-12 portfolio-item">
-                        <h3>
-                            <a href="{{entry.link}}">
-                                {{entry.title}}
-                            </a> 
-                        </h3>
-                        <p>
-                            {{entry.body}}
-                        </p>
-                        <a href="{{entry.link}}">
-                            See Source Code
-                        </a> 
-                    </div>
-                </div>
-                <!--./row -->
-
-                {% endfor %}
-
-                <!-- divider -->
-                <div class="row page-header"></div>
-                
                 
                 <!-- Blog Posts Header -->
                 <div id="blog-section" class="row">
@@ -152,6 +119,46 @@
                 <!--./row -->
 
                 {% endfor %}
+
+
+                <!-- divider -->
+                <div class="row page-header"></div>
+
+
+                <!-- Projects Header -->
+                <div id="projects-section" class="row">
+                    <div class="col-md-6 col-md-offset-3 portfolio-item">
+                        <h2>Projects</h2>                
+                    </div>
+                </div>
+                
+                {% for entry in projects %}
+
+                <!-- Item {{loop.index}}: {{entry.title}} -->
+                <div class="row">
+                    <div class="col-md-12 portfolio-item">
+                        <h3>
+                            <a href="{{entry.link}}">
+                                {{entry.title}}
+                            </a> 
+                        </h3>
+                        <p>
+                            {{entry.body}}
+                        </p>
+                        <a href="{{entry.link}}">
+                            See Source Code
+                        </a> 
+                        <p>
+                            {% for tg in entry.tags %}
+                            <span class="tag">{{tg}}</span>
+                            {% endfor %}
+                        </p>
+                    </div>
+                </div>
+                <!--./row -->
+
+                {% endfor %}
+
 
             </div>
             <!--./col -->

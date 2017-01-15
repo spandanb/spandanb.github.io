@@ -5,11 +5,31 @@ projects:
       link: https://github.com/spandanb/runrabbitrun
       body: A tracking system that provides runners real time 
             feedback on their performance.
+      tags: 
+        - Python
+        - Elasticsearch
+        - Kafka 
+        - Spark 
+        - Spark Streaming
 
     - title: Commandline Music Player
       link: https://github.com/spandanb/my-music-player
       body: A multi-modal command line music player inspired by Vim.
+      tags:
+        - Python
+        - python-prompt-toolkit
 
+    - title: HelpKisaan
+      link: https://github.com/spandanb/helpkisaan
+      body: A web app built using the MEAN stack. 
+            Intended as a peer-to-peer lending platform for Indian farmers, where 
+            interest would be paid as a percentage of the farmer''s yield.
+            Submitted to the internet.org India challenge.
+
+    - title: HTTP-over-Text
+      link: https://github.com/spandanb/ipos
+      body: A project that allows HTTP messages to be transported over text messages. 
+            This was intended to, more broadly, allow IP accessibility in regions that only support 2G.
 
 blogposts:
     - title: What is Data Engineering?
