@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from __future__ import print_function
 
 """
@@ -6,6 +7,7 @@ Generates index.html from contents and index.template.html
 
 import yaml
 from jinja2 import Template
+import pdb
 
 if __name__ == "__main__":
     #Read the content 

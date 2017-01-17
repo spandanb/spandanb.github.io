@@ -12,24 +12,76 @@ projects:
         - Spark 
         - Spark Streaming
 
-    - title: Commandline Music Player
+    - title: Virtual Infrastructure Orchestrator (Vino)
+      link: https://github.com/spandanb/orange
+      body: "An orchestration platform with support for: 1) arbitrary
+            L2 networks (overlays), 2) software-defined networking 3) multiple public
+            and private clouds, 4) containers, and 5) bare metal servers. This
+            was the prototype for the work done for my Masters thesis."
+      tags:
+        - Orchestration
+        - AWS (Boto3)
+        - Docker 
+        - OpenStack
+        - Ansible
+        - Open vSwitch
+
+    - title: Command Line Music Player
       link: https://github.com/spandanb/my-music-player
       body: A multi-modal command line music player inspired by Vim.
       tags:
         - Python
         - python-prompt-toolkit
 
+    - title: Localium
+      link: https://github.com/spandanb/localium
+      body: A marketplace for students, focused on clothing, electronics, textbooks and furniture.
+      tags:
+        - JavaScript
+        - AngularJS
+        - Node.js
+        - Mongo DB
+    
     - title: HelpKisaan
       link: https://github.com/spandanb/helpkisaan
       body: A web app built using the MEAN stack. 
             Intended as a peer-to-peer lending platform for Indian farmers, where 
             interest would be paid as a percentage of the farmer''s yield.
             Submitted to the internet.org India challenge.
+      tags: 
+        - JavaScript
+        - AngularJS
+        - Node.js
+        - Mongo DB
 
     - title: HTTP-over-Text
       link: https://github.com/spandanb/ipos
       body: A project that allows HTTP messages to be transported over text messages. 
             This was intended to, more broadly, allow IP accessibility in regions that only support 2G.
+      tags: 
+        - Python
+        - Ionic (AngularJS, Cordova)
+
+    - title: Navigation System for the Visually Impaired
+      link: https://github.com/spandanb/vis-imp-nav
+      body: A navigation system intended to assist visually impaired users, 
+            using a smartphone and a Microsoft Kinect.
+            The smartphone''s magnetometer reading was used to determine which way the  
+            user was facing. Additionally, Google Maps API was used to determine the route to the destination. 
+            The Kinectic was used to determine obstacles and provide navigation at the micro-level.
+            The smartphone provided haptic feedback informing the user whether they 
+            should move forward, turn left, or turn right.
+      tags:
+        - Kinect
+        - Python
+        - SimpleCV
+
+    - title: Python Static Dependency Analyzer
+      link: https://github.com/spandanb/dependency_analyzer
+      body: Performed static analysis on Python code to determine how different packages were depended upon.
+      tags: 
+        - Python
+
 
 blogposts:
     - title: What is Data Engineering?
