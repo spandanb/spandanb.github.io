@@ -92,5 +92,11 @@ blogposts:
                             
     - title: Run Rabbit Run and the Things I Learned While Doing My First Big Data Project
       link:  https://medium.com/@superspandan/run-rabbit-run-and-the-things-i-learned-while-doing-my-first-big-data-project-1db51267e9d3#.dm3cad33r                     
-      body: A tracking system that provides runners real time feedback on their performance.
+      body: This post describes the architecture and the experience of building Run Rabbit Run- 
+            a tracking system that provides runners real time feedback on their performance.
 
+    - title: Cloud Computing and Orchestration
+      link: https://medium.com/@superspandan/cloud-computing-and-orchestration-d733de38fff9#.6mi8k2r9o
+      body: For my masters thesis, I researched and prototyped a high level orchestration framework. 
+            In this post, I will discuss the motivation for my project and the architecture and
+            capabilities of the design and the prototype that was built.
