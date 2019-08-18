@@ -1,1 +1,9 @@
 Repo for my personal website.
+
+To generate website:
+
+python gen_index.py
+
+Troubleshoot
+============
+If website doesn't work try pushing empty commit.

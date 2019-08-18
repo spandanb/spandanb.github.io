@@ -5,18 +5,18 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-        
+
     <title>Spandan Bemby</title>
-    
+
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.css" rel="stylesheet">
-    
+
     <!-- Custom Styles -->
     <link href="css/style.css" rel="stylesheet">
-    
-    <link rel="icon" type="image/x-icon" href="img/favicon.ico">    
+
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
     <link href="fonts/font-awesome-4.7.0/css/font-awesome.min.css" rel=stylesheet>
-    
+
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -29,11 +29,11 @@
         (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
         m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
         })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-      
+
         ga('create', 'UA-90465322-1', 'auto');
         ga('send', 'pageview');
     </script>
-        
+
 </head>
 
 <body>
@@ -43,19 +43,19 @@
 
         <div class="row">
             <div class="col-md-6 col-md-offset-3">
-                
+
                 <!-- Page Header -->
                 <div class="row">
                     <!-- Left Column -->
                     <div class="col-md-4">
-                        <img class="img-responsive img-thumbnail" src="img/profile-pic.jpg" alt="">    
+                        <img class="img-responsive img-thumbnail" src="img/profile-pic.jpg" alt="">
                     </div>
                     <!-- Right Column -->
                     <div class="col-md-8">
                         <div class="row">
                             <div class="col-md-12">
                                 <h2>Spandan Bemby</h2>
-                            </div>    
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-md-4">
@@ -73,41 +73,39 @@
                             <div class="col-md-4">
                                 <h3><a href="spandanbemby.pdf">Resume</a></h3>
                             </div>
-                            
+
                             <!-- Github -->
-                            <div class="col-md-4">                                
-                                <a href="https://github.com/spandanb" target="_blank">                                
+                            <div class="col-md-4">
+                                <a href="https://github.com/spandanb" target="_blank">
                                     <i class='fa fa-3x fa-github'></i>
                                 </a>
                             </div>
-                            
+
                             <!-- LinkedIn -->
-                            <div class="col-md-4">                                
-                                <a href="https://www.linkedin.com/in/spandan-bemby" target="_blank">                                
+                            <div class="col-md-4">
+                                <a href="https://www.linkedin.com/in/spandan-bemby" target="_blank">
                                     <i class='fa fa-3x fa-linkedin-square'></i>
                                 </a>
                             </div>
-                            
+
                         </div>
-                                                
+
                     </div>
                     <!-- ./col-md-6 right-column-->
                 </div>
                 <!-- ./row -->
-                
+
                 <!-- About -->
                 <div class="row page-header">
                     <div class="col-md-12">
                         <p>
-                            Hi, I'm software engineer from the University of Toronto, with a passion for and 
-                            hands-on experience building scalable, big-data applications and tools.
-                            I am currently looking for opportunities to have a bigger impact. Please contact me at 
-                            <span class="tag">spandan (dot) bemby (at) mail (dot) utoronto (dot) ca</span>.
+                            {{blurb}}
+                            <span class="tag">{{email}}</span>.
                         </p>
-                    </div>    
+                    </div>
                 </div>
 
-                
+
                 <!-- Blog Posts Header -->
                 <div id="blog-section" class="row">
                     <div class="col-md-6 col-md-offset-3 portfolio-item">
@@ -116,7 +114,7 @@
                 </div>
 
                 {% for entry in blogposts %}
-                
+
                 <!-- Item {{loop.index}}: {{entry.title}} -->
                 <div class="row">
                     <div class="col-md-12 portfolio-item">
@@ -145,10 +143,10 @@
                 <!-- Projects Header -->
                 <div id="projects-section" class="row">
                     <div class="col-md-6 col-md-offset-3 portfolio-item">
-                        <h2>Projects</h2>                
+                        <h2>Projects</h2>
                     </div>
                 </div>
-                
+
                 {% for entry in projects %}
 
                 <!-- Item {{loop.index}}: {{entry.title}} -->
@@ -157,14 +155,14 @@
                         <h3>
                             <a href="{{entry.link}}" target="_blank">
                                 {{entry.title}}
-                            </a> 
+                            </a>
                         </h3>
                         <p>
                             {{entry.body}}
                         </p>
                         <a href="{{entry.link}}" target="_blank">
                             See Source Code
-                        </a> 
+                        </a>
                         <p>
                             {% for tg in entry.tags %}
                             <span class="tag">{{tg}}</span>
@@ -180,10 +178,10 @@
             </div>
             <!--./col -->
         </div>
-        <!-- /.row -->        
+        <!-- /.row -->
     </div>
     <!-- /.container -->
-    
+
 </body>
 
 </html>
