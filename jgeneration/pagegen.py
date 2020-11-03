@@ -194,7 +194,7 @@ def generate_content(metadata: CMetadata)->str:
     template = env.get_template(metadata.template_id)
 
     # render template
-    image_location = os.path.join(IMG_DIR, metadata.image_id)
+    image_location = get_relpath(os.path.join(IMG_DIR, metadata.image_id))
     rendered = template.render(title=metadata.title,
                 date=metadata.date, body=block,
                 image_location=image_location,
