@@ -1,0 +1,27 @@
+art:    
+    - image_id: then-there-were-four.png
+      title: Then There Were Four
+      subtext: paper 
+      date: 2018
+    
+    - image_id: the-carnival.png
+      title: The Carnival
+      # subtext could be the title materials, location, etc
+      subtext: paper 
+      date: 2018
+
+    - image_id: you-and-me.png
+      title: You and Me
+      # TODO: to make this text linkable,
+      # the easiest way is to make the text interpretable
+      # e.g. markdown mechanism for creating a [text](link_address)
+      subtext: Paper, inspired by the work of Hari and Deepti 
+      date: 2018
+
+photography:
+    - image_id: magpie.jpg
+      title: Magpie in Banff
+      subtext: Banff
+      date: 2020
+      
+      

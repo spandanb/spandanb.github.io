@@ -1,0 +1,26 @@
+# each top level key corresponds to separate section
+about:
+
+tech:
+
+essays:
+    section_title: Essays
+    subtext: 
+    template_id: listing-jumbotron-no-image.jinja.html
+
+poetry:
+    template_id: listing-jumbotron.jinja.html
+    section_title: Poetry
+    subtext: A collection of my poetry
+
+art:
+    template_id: listing-images-jumbotron-no-image.jinja.html
+    section_title: Art
+    subtext:
+    image_content: true
+
+photography:
+    template_id: listing-images-jumbotron-no-image.jinja.html
+    section_title: Photography
+    subtext:
+    image_content: true

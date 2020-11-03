@@ -1,0 +1,53 @@
+.poetry-jumbotron {
+    background-image: url("../img/poetry_img.jpg");
+    background-size: cover;
+}
+
+
+.poetry-jumbotron-card {
+	width: 18rem;
+	opacity: 0.95;
+}
+.poetry-jumbotron-card-body {
+	background-color: #e6fffa;
+}
+
+/*--- Below is from the old website sheet */
+
+body {
+    margin-top: 50px;    
+}
+
+.portfolio-item {
+    margin-bottom: 25px;
+}
+
+.tag{
+  /*.btn*/
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  -ms-touch-action: manipulation;
+      touch-action: manipulation;
+
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+
+  /*.btn-primary*/
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+
+  /*.btn-xs*/
+  padding: 1px 5px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 3px;
+}
