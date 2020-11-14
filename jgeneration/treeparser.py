@@ -37,19 +37,24 @@ class RootNode(Node):
 
 
 class UnspecifiedNode(Node):
-    '''`
+    '''
+    TODO: Rename to UndeterminedNode
     unspecified whether it's open-and closed or just closed
     '''
     pass
 
 
 class OpenClosedNode(Node):
+    '''
+    A node with an open and closed tag, e.g. <p></p>
+    '''
     pass
 
 
 class ClosedNode(Node):
     '''
     represents a self closing tag
+    <img\>
     '''
     def __init__(self, *args, closing_marker=False, **kwargs):
         '''
@@ -71,65 +76,274 @@ class DataNode(ClosedNode):
 
 class CommentNode(ClosedNode):
     '''
+    represents a comment
     '''
     def __init__(self, comment):
         super().__init__('COMMENT')
         self.comment = comment
 
 
+### Processing Functions
+
+def find_nodes_with_fn(match_fn, node, descend=True, single=False)->list:
+    '''
+    find descendent node that matches `match_fn`. All search includes
+    `rootnode` and it's children
+
+    Arguments:
+        match_fn(Function):
+        rootnode(Node): node whose descendents to search; if none start at tree root
+        descend: determines whether search scoped to children of `node` or all descendents
+        single(bool): if true, return first result else return all results
+    '''
+    maxdepth = float('inf')
+    if not descend:
+        maxdepth = 1
+
+    # do a BFS
+    matches = []  # result set
+    queue = deque()
+    NodeDepth = namedtuple('NodeDepth', 'node depth')
+    queue.append(NodeDepth(node, 0))
+    while queue:
+        item, depth = queue.popleft()
+        if match_fn(item):
+            matches.append(item)
+        # handle request for first element only
+        if len(matches) > 0 and single:
+            return matches
+
+        if depth + 1 <= maxdepth:
+            # only process upto maxdepth; i.e. don't need to add anything beyond maxdepth
+            next_gen = [NodeDepth(child, depth+1) for child in item.children]
+            queue.extend(next_gen)
+
+    return matches
+
+
+def find_nodes_with_attr(node, attr, descend=True):
+    '''
+    find nodes with matching attr
+    '''
+    def match_fn_nukeme(node):
+        return any(key for key, val in node.attrs if key == attr)
+
+    match_fn = lambda node: any(key for key, val in node.attrs if key == attr)
+    find_nodes_with_fn(match_fn, node, descend)
+
+
+def find_nodes_with_attrval(node, attr, attrval, descend=True):
+    '''
+    find nodes contains matching attribute (`attrname`)
+    with corresponding value (`attrval`)
+    '''
+    def match_fn(node):
+        for attr, val in node.attrs:
+            if attr == attr:
+                if val == attrval:
+                    return True
+        return False
+    return find_nodes_with_fn(match_fn, node, descend)
+
+
+def find_nodes_with_tag(node, tag, descend=True):
+    '''
+    find nodes with matching tag
+    '''
+    match_fn = lambda node: node.tag == tag
+    return find_nodes_with_fn(match_fn, node, descend)
+
 ### Processing
+
+class QMNode:
+    '''
+    Queryable-Processable Node:
+    represents a node, that can be queryied for descendenants matching certain
+    properties or values.
+    Creating a node class allows expressing API, like:
+       - root.descendents(tag="foo").child().parent().child(text_equals)
+    Chaining is achieved by returning results in this class
+    '''
+    def __init__(self, node: Node, tree):
+        self.node = node
+        # store ref to tree
+        self._tree = tree
+
+    def parent(self):
+        '''
+        we need to initialize parent node with it's parent
+        '''
+        return QMNode(self._tree.get_parent(self.node))
+
+    def child(self, tag=None, attr=None, attrval=None):
+        result = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=False, single=True)
+        return QMNode(results[0], self._tree) if len(result) == 1 else None
+
+    def children(self, tag=None, attr=None, attrval=None):
+        '''
+        '''
+        matches = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=False, single=False)
+        return [QMNode(node, self._tree) for node in matches]
+
+    def descendent(self, tag=None, attr=None, attrval=None):
+        '''
+        '''
+        result = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=True, single=True)
+        return QMNode(results[0], self._tree) if len(result) == 1 else None
+
+    def descendents(self, tag=None, attr=None, attrval=None):
+        '''
+        '''
+        matches = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=True, single=False)
+        return [QMNode(node, self._tree) for node in matches]
+
+    def get_attr(self, attr, notfound=None):
+        for idx, (key, value) in enumerate(self.node.attrs):
+            if key == attr:
+                return val
+        return notfound
+        
+    def set_attr(self, attr, attrval):
+        '''
+        set attr
+        '''
+        attridx = -1
+        node = self.node
+        for idx, (key, value) in enumerate(node.attrs):
+            if key == attr:
+                # print(f'attrname is "{attr}"')
+                attridx = idx
+                break
+        # if attr not found, add it
+        if attridx == -1:
+            node.attrs.append((attr, attrval))
+        else:
+            node.attrs[attridx] = (attr, attrval)
+
+    def set_class(self, classname):
+        self.set_attr("class", classname)
+
+
+class Tree:
+    '''
+    Represents the DOM corresponding to the
+    parsed text. Contains the search API
+    '''
+    def __init__(self, root, id_idx: dict, parent_idx: dict):
+        self.root = root
+        self.id_idx = id_idx
+        self.parent_idx = parent_idx
+
+    def get_parent(self, node):
+        return self.parent_idx[node]
+    
+    def get_root(self, as_qmnode: bool=True):
+        if as_qmnode:
+            return QMNode(node=self.root, parent=None)
+        return self.root
+
+    def find_node_with_id(self, objectid, as_qmnode: bool = True) -> Node:
+        '''
+        ID must be unique
+        '''
+        node = self.id_idx.get(objectid, None)
+        if as_qmnode and node is not None:
+            return QMNode(node, self)
+        return node
+
+    @staticmethod
+    def find_nodes(node, tag=None, attr=None, attrval=None, descend=True, single=False)->list:
+        '''
+        Assumption: I will either do find on ID or another attr; but not both
+        hence static method;
+
+        supports three search params:
+            - tag
+            - attrname and attrval
+            - attrval
+
+        root.find(tag="foo", )
+        root.find_all(tag="foo")
+
+        root.descendents(tag="foo").child().parent().child(text_equals)
+
+        '''
+        if (tag is not None) and (attr is not None):
+            # only support one search parameter
+            raise NotImplementedError(f"Only single parameter-search supported;In node search both tag ({tag}) and attr ({attr}) val ({attrval}) set")
+
+        matches = []
+        if tag is not None:
+            matches = find_nodes_with_tag(node, tag)
+        elif attr is not None and attrval is not None:
+            matches = find_nodes_with_attrval(node, attr, attrval)
+        elif attr is not None:
+            matches = find_nodes_with_attr(node, attr)
+        else:
+            # no filter condition; get all nodes
+            matches = find_nodes_with_fn(node, lambda node: True)           
+        return matches
+
 
 class TreeParser(HTMLParser):
     '''
     Parses HTML text into a DOM tree
-    
-    Using a stack based parser doesn't work
-    since html 5 allows standalone
-    non-self-closing tags, i.e. since these
-    tags look like start tag, they can only be
-    distinguished from standard opening tags
-    if you know the standard.
 
-    The new algorithm is to:
-        - store a list of start tags seens so far
-        - on endtag, find the starttag 
-            - since html nesting is proper, any unclosed tags
-               in list of tags must be standalone
+    Using a stack based parser doesn't work since html 5 allows standalone
+    non-self-closing tags, i.e. since these tags look like start tag,
+    they can only be distinguished from standard opening tags via the spec.
+
+    The current algorithm is to:
+        - store a list of start tag nodes seens so far (`self.nodes`)
+        - on endtag, use the `tagpos` index to find the starttag
+        - the start and end form a opening-closing tag pair
+        - nodes in between are children, which are coalesced in `coalesce`
+          i.e. added as children
+        - at the end, any remaining children must be children of root
     '''
 
     def __init__(self):
         '''
         '''
         super().__init__()
+        self._init()
+
+    def _init(self):
+        '''
+        custom init function that can be used to reset parser
+        '''
         # root of tree
         self.root = RootNode()
+        # these are used to construct the tree
         # list of nodes seen so far
         self.nodes = []
         # dict of tagname -> list of idx/position in self.nodes
         self.tagpos = defaultdict(list)
-        
-        # index nodes by tag and attrs
-        self.id_idx = {}  # id -> Node
-        self.tag_idx = defaultdict(list)
+
+        # index nodes by id
+        # can't construct global indices, e.g. on class, tag
+        # since, the search semantics is that it's scoped; to filter
+        # to children of the scoping node, would require the search
+        self.id_idx = {}
+        self.parent_idx = {}
+        self.output_tree = None  # the DOM tree that the parser produces
 
     def update_indices(self, node: Node):
-        # not indexing on tag
-        
-        # index attrs
+        # index id 
         for key, value in node.attrs:
             # index by Id
             if key == 'id':
                 self.id_idx[value] = node
-        
-        self.tag_idx[node.tag].append(node)
-        
+
+        for child in node.children:
+            self.parent_idx[child] = node
+
     def handle_starttag(self, tag, attrs):
         # print(f'handling STARTTAG {tag}; attrs={attrs}')
         node = UnspecifiedNode(tag, attrs)
         self.nodes.append(node)
         idx = len(self.nodes) - 1
         self.tagpos[tag].append(idx)
-
 
     def handle_endtag(self, tag):
         # print(f'handling ENDTAG {tag}')
@@ -165,142 +379,39 @@ class TreeParser(HTMLParser):
 
     def coalesce(self, nodes: list):
         '''
+        aggregate op invoked by parent node, on children `nodes`/
         convert standalone nodes to ClosedNode
         '''
         result = []
         for node in nodes:
+            # this node hasn't been closed; we can definitively say this is
+            # stanalone, i.e. ClosedNode
             if isinstance(node, UnspecifiedNode):
                 result.append(ClosedNode(tag=node.tag, attrs=node.attrs))
                 self.update_indices(node)
-                # print(f'CN: {result[-1]}')
             else:
                 result.append(node)
         return result
 
-    def finalize(self):
-        # whatever is left must be children of root
+    def finalize(self)->Tree:
+        '''
+        perform any finalization operations and return
+        Tree that is generated from parse.
+        '''
+        # perform finalize operation
+        # any remaining nodes must be children of root, since
+        # we never explicitly encounter the end, we need to do
+        # it when requester implicitly commits tree has been read
+
+        # condition makes operation idempotent
+        # Note: this operation can only be called once 
         for node in self.nodes:
             self.root.children.append(node)
+        result = Tree(self.root, self.id_idx, self.parent_idx)
+        # reset all internal data structure
+        self._init()
+        return result
 
-    '''
-    transformation API below
-    
-    the current API supports id based mutation
-    to build a generic API would require exposing
-    a generic way to search and mutate nodes
-    
-    namely, search on id, attr, and tag is sufficient
-    
-    '''
-    def add_class_by_id(self, objectid: str, classname: str):
-        '''
-        Add class to node with objectid
-        TODO: remove/replace with new API
-        '''
-        node = self.id_idx[objectid]
-        newval = classname
-        classidx = -1
-        for idx, (key, value) in enumerate(node.attrs):
-            # TODO: does case-sensitivity matter here
-            if key == 'class':
-                newval = f'{value} {classname}'
-                classidx = idx
-                break
-        # class attr exists; update it
-        if classidx != -1:            
-            node.attrs[classidx] = ('class', newval)
-        else:
-            node.attrs.append('class', newval)
-
-    def set_attr_by_id(self, objectid: str, attrname: str, attrval: str):
-        '''
-        set `attrname` on node with `objectid` value `attrval`
-        either deprecate the implementation or
-            atleast remove this implementation
-        TODO: remove/replace with new API
-        '''
-        # test and replace with below 
-        # node = self.find_node_with_id(objectid)
-        # self.set_attr(node, attrname, attrval)
-        
-        node = self.id_idx[objectid]
-        attridx = -1
-        for idx, (key, value) in enumerate(node.attrs):
-            if key == attrname:
-                attridx = idx
-                break
-        # if attr not found, set it
-        if attridx == -1:
-            node.attrs.append((attrname, attrval))
-        else:
-            node.attrs[attridx] = (attrname, attrval)
-
-        
-    def set_attr(self, node, attrname, attrval):
-        attridx = -1
-        for idx, (key, value) in enumerate(node.attrs):
-            if key == attrname:
-                print(f'attrname is "{attrname}"')
-                attridx = idx
-                break
-        # if attr not found, add it
-        if attridx == -1:
-            node.attrs.append((attrname, attrval))
-        else:
-            node.attrs[attridx] = (attrname, attrval)
- 
-    def find_node_with_id(self, objectid) -> Node:
-        '''
-        ID must be unique
-        '''
-        return self.id_idx[objectid]
-
-    def find_nodes_with_fn(self, match_fn, node=None, descend=True)->list:
-        '''        
-        find descendent node that matches `match_fn`. All search includes
-        `rootnode` and it's children
- 
-        Arguments:
-            match_fn(Function):
-            rootnode(Node): node whose descendents to search; if none start at tree root
-            descend: determines whether search scoped to children of `rootnode` or all descendents
-        '''
-        if node is None:
-            node = self.root
-
-        # do a shallow search
-        if not descend:           
-            return [match_fn(item) for item in ([node] + node.children)]
-        
-        # do a BFS 
-        matches = []
-        queue = deque()
-        queue.append(node)
-        while queue:
-            item = queue.popleft()
-            # if item.tag == 'a': print(f'item is {item}')
-            if match_fn(item):
-                matches.append(item)
-            queue.extend(item.children)
-                
-        return matches
-                
-    def find_nodes_with_attr(self, attrname, attrval, node=None, descend=True):
-        def match_fn(node):
-            '''return True node contains attrname with attrval'''
-            for attr, val in node.attrs:
-                if attrs == attrname:
-                    if val == attrval:
-                        return True
-            return False
-        return find_nodes_with_fn(match_fn, node, descend)
-    
-    def find_nodes_with_tag(self, tag, node=None, descend=True):
-        def match_fn(node):
-            '''return True if node tag matches'''
-            return node.tag == tag
-        return self.find_nodes_with_fn(match_fn, node, descend)
-        
 
 class TreePrinter:
 
@@ -371,18 +482,38 @@ class TreePrinter:
         return ''.join(result)
 
 
+  
+
+
+def apply_transforms():
+    Tree = tparser.parse(filepath)
+    root = Tree.Root()    
+    # find
+    root.descendents(tag="foo").child().parent().child(text_equals)
+    
+    # mutate
+    node.set_attr()
+    node.add(child)
+    
+
+
 
 def mk_tree(filepath):
     fpath, fext = os.path.splitext(filepath)
     outfilepath = f'{fpath}-rtrip.{fext}'
 
     parser = TreeParser()
-    with open(filepath, encoding='utf-8') as fp:
-        parser.feed(fp.read())
-    parser.finalize()
+    text = ''
+    #with open(filepath, encoding='utf-8') as fp:
+    #    text = fp.read()
+    
+    text = '<a><b></b></a>'
+    
+    parser.feed(text)
+    tree = parser.get_tree()
     
     # apply transforms
-    parser.add_class_by_id('nav-item-essays', 'active')
+    #import pdb; pdb.set_trace()
 
     printer = TreePrinter(parser.root)
     with open(outfilepath, 'w', encoding='utf-8') as fp:
@@ -392,7 +523,14 @@ def mk_tree(filepath):
     print(f'Read {filepath}; Writing to {outfilepath}')
 
 
+def test():
+    parser = TreeParser()
+    parser.feed('<html><body>foo</body></html>')
+    tree = parser.finalize()
+    root = tree.get_root()
+    
 
+        
 if __name__ == '__main__':
     #filepath = r'C:\Users\spand\universe\personal_website2\art-listing-generated.html'
     filepath = r'C:\Users\spand\universe\html_parser\hello2.html'
