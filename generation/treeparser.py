@@ -189,7 +189,7 @@ class QMNode:
         '''
         '''
         result = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=True, single=True)
-        return QMNode(results[0], self._tree) if len(result) == 1 else None
+        return QMNode(result[0], self._tree) if len(result) == 1 else None
 
     def descendents(self, tag=None, attr=None, attrval=None):
         '''
@@ -202,7 +202,7 @@ class QMNode:
             if key == attr:
                 return val
         return notfound
-        
+
     def set_attr(self, attr, attrval):
         '''
         set attr
@@ -236,10 +236,10 @@ class Tree:
 
     def get_parent(self, node):
         return self.parent_idx[node]
-    
+
     def get_root(self, as_qmnode: bool=True):
         if as_qmnode:
-            return QMNode(node=self.root, parent=None)
+            return QMNode(self.root, self)
         return self.root
 
     def find_node_with_id(self, objectid, as_qmnode: bool = True) -> Node:
@@ -281,7 +281,7 @@ class Tree:
             matches = find_nodes_with_attr(node, attr)
         else:
             # no filter condition; get all nodes
-            matches = find_nodes_with_fn(node, lambda node: True)           
+            matches = find_nodes_with_fn(node, lambda node: True)
         return matches
 
 
@@ -329,7 +329,7 @@ class TreeParser(HTMLParser):
         self.output_tree = None  # the DOM tree that the parser produces
 
     def update_indices(self, node: Node):
-        # index id 
+        # index id
         for key, value in node.attrs:
             # index by Id
             if key == 'id':
@@ -404,7 +404,7 @@ class TreeParser(HTMLParser):
         # it when requester implicitly commits tree has been read
 
         # condition makes operation idempotent
-        # Note: this operation can only be called once 
+        # Note: this operation can only be called once
         for node in self.nodes:
             self.root.children.append(node)
         result = Tree(self.root, self.id_idx, self.parent_idx)
@@ -440,7 +440,7 @@ class TreePrinter:
             return f'<!-- { node.comment} -->'
         if isinstance(node, DataNode):
             return node.data
-    
+
         attrs = self.format_attrs(node.attrs)
         if attrs == '':
             return f'<{node.tag}>'
@@ -482,21 +482,6 @@ class TreePrinter:
         return ''.join(result)
 
 
-  
-
-
-def apply_transforms():
-    Tree = tparser.parse(filepath)
-    root = Tree.Root()    
-    # find
-    root.descendents(tag="foo").child().parent().child(text_equals)
-    
-    # mutate
-    node.set_attr()
-    node.add(child)
-    
-
-
 
 def mk_tree(filepath):
     fpath, fext = os.path.splitext(filepath)
@@ -506,12 +491,12 @@ def mk_tree(filepath):
     text = ''
     #with open(filepath, encoding='utf-8') as fp:
     #    text = fp.read()
-    
+
     text = '<a><b></b></a>'
-    
+
     parser.feed(text)
     tree = parser.get_tree()
-    
+
     # apply transforms
     #import pdb; pdb.set_trace()
 
@@ -524,14 +509,23 @@ def mk_tree(filepath):
 
 
 def test():
+    # parse
     parser = TreeParser()
     parser.feed('<html><body>foo</body></html>')
     tree = parser.finalize()
-    root = tree.get_root()
-    
+    # modify tree
+    root = tree.get_root(as_qmnode=True)
+    root.descendent('body').set_attr('class', 'fooclass')
+    # print tree
+    printer = TreePrinter(root.node)
+    expected = '<html><body class="fooclass">foo</body></html>'
+    actual = printer.mk_doc()
+    assert expected == actual, "test fail"
 
-        
+
+
 if __name__ == '__main__':
     #filepath = r'C:\Users\spand\universe\personal_website2\art-listing-generated.html'
     filepath = r'C:\Users\spand\universe\html_parser\hello2.html'
-    mk_tree(filepath)
+    #mk_tree(filepath)
+    test()

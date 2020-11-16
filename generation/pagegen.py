@@ -7,14 +7,14 @@ import os
 import yaml
 
 from collections import namedtuple, OrderedDict, defaultdict
-from dataclasses import dataclass
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-import treeparser as parser
+import textparser
+import treeparser
 
 ###  Config
 SELF_PATH = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(SELF_PATH, r'..\jtemplates')
+TEMPLATE_DIR = os.path.join(SELF_PATH, r'..\templates')
 OUTPUT_DIR = os.path.join(SELF_PATH, r'..')
 CONTENT_DIR = os.path.join(SELF_PATH, r'..\content')
 IMG_DIR = os.path.join(SELF_PATH, r'..\img')
@@ -40,12 +40,14 @@ TODO:
 
 '''
 Design Decisions:
-Transforming trees vs text: I'm leaning more heavily towards
-applying transformations on trees, since both find and
-mutate operations can be easier expressed; and transformations
-expressed on tree are more-likely order-invariant. It seems to do this "elegantly",
-one need not just the DOM, and the standard find_node_with_(tag|id|class),
-but something like xpath.
+- Transforming trees vs text: 
+Everything can be expressed via jinja templates.
+But, this is not very elegant, since every bit of html that can change
+has to be controlled via variable. The alternative is to 
+apply tranformations on a tree. Transforming a tree is easier
+because, one can specify which node to find, and transform. 
+I've opted for this when possible. But this does mean the tree
+has to be searchable and updatable.
 '''
 
 ### DataStructs
@@ -87,13 +89,6 @@ class ICMetadata:
 
     def get_contentpath(self):
         return os.path.join(IMG_CONTENT_DIR, self.image_id)
-
-    def get_relpath(self):
-        '''
-        get path relative to OUTPUT_DIR
-        # NUKE ME: use utility function
-        '''
-        return os.path.relpath(self.get_contentpath(), OUTPUT_DIR)
 
 
 class LMetadata:
@@ -158,91 +153,6 @@ def get_lines(content_path)-> list:
 ### Content Generation
 
 
-def insert_footnote_links(lines: list)->str:
-    '''
-    transforms footnotes in the text.
-    If the content has footnotes, it's seperated by
-    a line like ___\n. Footnotes are marked as [n] in the content
-    and referenced below the separator by [n]. Footnotes are the last lines of content
-
-    To make the footnote a link, transform the line containing
-    the first [n] into <a href="footnote-n">[n]</a>
-    the second [n], e.g. [n]foobar.. -> <span id="footnote-n">[n]foobar</span>
-
-    inplace modifes `lines`
-    '''
-    # update markers in content body
-    fnnum = 1
-    # since i'll in-place modify `lines` don't use
-    # an iterator over lines; rather iterate manually using an index
-    lineno = 0
-    while lineno < len(lines):
-        # find marker
-        marker = f'[{fnnum}]'
-        anchor = f'<a href="#footnote-{fnnum}">[{fnnum}]</a>'
-
-        while lineno < len(lines):
-            line = lines[lineno]
-            # match found
-            if marker in line:
-                # replace
-                newline = line.replace(marker, anchor)
-                lines[lineno] = newline
-                # search next footnote num
-                fnnum += 1
-                break
-            else:
-                lineno += 1
-
-
-    # update footnote refs underneath
-    FOOTNOTE_DIVIDER = '________________\n'
-    # if there are footnotes, they are bottom n lines; iterate from the bottom
-    lineno = len(lines)-1
-    while lineno >= 0:
-        # don't use an iterator over lines, since I'll be modifying it
-        line = lines[lineno]
-        if line == FOOTNOTE_DIVIDER:
-            break
-        match = re.match(r'\[([0-9]+)\](.*)', line)
-        if match is None:
-            # there are no footnotes
-            break
-        fnnum, fnbody = match.groups()
-        lines[lineno] = f'<span id="footnote-{fnnum}">{line}</span>'
-
-        lineno -= 1
-    return lines
-
-
-def text_to_html(lines: list)-> str:
-    '''
-    Transforms lines of text into html like
-
-    - replaces a\nb with a<br>b
-    - replaces a\n(\n)+b  with a<br><br>b
-
-    Arguments:
-        text: list[str]
-    '''
-
-    output = []
-    for line in lines:
-        stripped = line.strip()
-        if len(stripped) > 0:
-            output.append(stripped)
-            output.append('<br>')
-        else:  # len(stripped) == 0
-            # we never want more than 2 contiguous <br> elements
-            if len(output) >= 2 and output[-1] == '<br>' and output[-2] == '<br>':
-                continue
-            output.append('<br>')
-
-    # \n to make more human-readable
-    output = '<p>\n' + '\n'.join(output) + '\n</p>'
-    return output
-
-
 def generate_content(metadata: CMetadata)->str:
     '''
     generate content for file specified in
@@ -254,8 +164,7 @@ def generate_content(metadata: CMetadata)->str:
 
     # note these transformations are order dependenent
     text = get_lines(content_path)
-    text = insert_footnote_links(text)
-    block = text_to_html(text)
+    block = textparser.text_to_html(text)
 
     # configure jinja environment
     env = Environment(
@@ -334,7 +243,7 @@ def generate_image_listing(metadata: LMetadata, items: list):
     listing = []
     for item in items:
         subtext = f'{item.subtext}, {item.date}'
-        relloc = item.get_relpath()
+        relloc = get_relpath(item.get_contentpath())
         listing.append(ItemView(item.title, subtext, relloc))
 
     print(f'generate_image_listing {metadata.section} listing={listing}')
@@ -414,7 +323,7 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict):
         content_fpaths(dict): dict[section]-> [content_paths]
     '''
 
-    tparser = parser.TreeParser()
+    tparser = treeparser.TreeParser()
     # handle listing files
     for (section, filepath) in listing_fpaths.items():
         # read file to tree
@@ -438,7 +347,7 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict):
         outfilepath = decorate_path(filepath, 'mutated') if DEBUG else filepath
         print(f'transforming {section} at {filepath} to {outfilepath}')
         # import pdb; pdb.set_trace()
-        printer = parser.TreePrinter(tree.get_root(as_qmnode=False))
+        printer = treeparser.TreePrinter(tree.get_root(as_qmnode=False))
         with open(outfilepath, 'w', encoding='utf-8') as fp:
             result = printer.mk_doc()
             fp.write(result)
@@ -475,7 +384,7 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict):
             outfilepath = decorate_path(filepath, 'mutated') if DEBUG else filepath
             print(f'transforming {section} at {filepath} to {outfilepath}')
             # printer = parser.TreePrinter(tparser.root)
-            printer = parser.TreePrinter(tree.get_root(as_qmnode=False))
+            printer = treeparser.TreePrinter(tree.get_root(as_qmnode=False))
             with open(outfilepath, 'w', encoding='utf-8') as fp:
                 result = printer.mk_doc()
                 fp.write(result)
@@ -483,8 +392,10 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict):
 
 def validations(listing_fpaths, content_fpaths):
     '''
-    ensure files aren't empty
-    perhaps have a diff mode
+    TODO: apply validations
+    1) ensure files aren't empty
+    2) perhaps have a diff mode
+    3) validate DOM tree- i.e. do all nodes closes
     '''
 
 
