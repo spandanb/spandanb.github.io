@@ -2,7 +2,7 @@ essays:
     - title: The Imperative to Moral Responsibility
       # date is in format (year-month-day)
       date: 2020-07-11
-      # content id is relative to <ROOT>\content\essays\ 
+      # content id is relative to <ROOT>\content\essays\
       content_id: moral-imperative.txt
       # template id is relative to <ROOT>\templates\
       #template_location: content-no-image.jinja.html
@@ -11,14 +11,27 @@ essays:
       # items may have an optional image; relative to <ROOT>\img
       image_id: crane.jpg
       image_attribution: Image by <a href="https://pixabay.com/users/analogicus-8164369/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=3703469">analogicus</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=3703469">Pixabay</a>
-      
+
+    - title: Sensemaking in the time of a Pandemic
+      # date is in format (year-month-day)
+      date: 2020-07-11
+      # content id is relative to <ROOT>\content\essays\
+      content_id: sense-making-pandemic.txt
+      # template id is relative to <ROOT>\templates\
+      #template_location: content-no-image.jinja.html
+      #template_location: content-jumbotron.jinja.html
+      template_id: content-image.jinja.html
+      # items may have an optional image; relative to <ROOT>\img
+      image_id: monkey.jpg
+      image_attribution: Image by <a href="https://pixabay.com/users/romanticfatman-5414736/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2500919">Lerkrat Tangsri</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2500919">Pixabay</a>
+
 poetry:
     - title: Wisdom and Sunshine
       date: 2020-01-01
       content_id: wisdom-and-sunshine.txt
       template_id: content-image.jinja.html
       # template_location: item-template-jumbotron.html
-      image_id: bicycle.png 
+      image_id: bicycle.png
       image_attribution: Image by <a href="https://pixabay.com/users/openclipart-vectors-30363/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1294947">OpenClipart-Vectors</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1294947">Pixabay</a>
 
     - title: Samsara
@@ -26,6 +39,6 @@ poetry:
       content_id: samsara.txt
       template_id: content-no-image.jinja.html
       # template_location: item-template-jumbotron.html
-      image_id: bicycle.png 
+      image_id: bicycle.png
       image_attribution: Image by <a href="https://pixabay.com/users/openclipart-vectors-30363/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1294947">OpenClipart-Vectors</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1294947">Pixabay</a>
-      
+
