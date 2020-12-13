@@ -1,4 +1,5 @@
 # each top level key corresponds to separate section
+# NOTE: template_id for image and non-image listings are different
 about:
 
 tech:
@@ -26,6 +27,6 @@ photography:
     image_content: true
 
 random-thoughts:
-    template_id: listing-images-jumbotron-no-image.jinja.html
+    template_id: listing-jumbotron-no-image.jinja.html
     section_title: Random Thoughts
     subtext:

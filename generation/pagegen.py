@@ -234,7 +234,7 @@ def generate_content_listing(metadata: LMetadata, items: list):
         output_filepath = os.path.join(OUTPUT_DIR, f'{metadata.section}-listing-generated.html')
     else:
         output_filepath = os.path.join(OUTPUT_DIR, f'{metadata.section}-listing.html')
-    print(f'writing listing {metadata.section} to {output_filepath}')
+    print(f'writing listing {metadata.section} to {output_filepath} with {len(items)} items')
     with open(output_filepath, 'w', encoding='utf-8') as fp:
         fp.write(rendered)
     return output_filepath
@@ -266,7 +266,7 @@ def generate_image_listing(metadata: LMetadata, items: list):
         output_filepath = os.path.join(OUTPUT_DIR, f'{metadata.section}-listing-generated.html')
     else:
         output_filepath = os.path.join(OUTPUT_DIR, f'{metadata.section}-listing.html')
-    print(f'writing listing {metadata.section} to {output_filepath}')
+    print(f'writing listing {metadata.section} to {output_filepath} with {len(items)} items')
     with open(output_filepath, 'w', encoding='utf-8') as fp:
         fp.write(rendered)
     return output_filepath
@@ -309,6 +309,7 @@ def generate_listings(listings_file: str, content_file: str, img_content_file: s
     results = {} # section -> filepath
     for section, props in listings.items():
         if props is None:
+            print(f'Skipping listing generation for section: "{section}"; empty props')
             continue
 
         lmetadata = LMetadata(section=section, **props)
