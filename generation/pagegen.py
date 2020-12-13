@@ -22,7 +22,9 @@ IMG_DIR = os.path.join(SELF_PATH, r'..\img')
 IMG_CONTENT_DIR = os.path.join(SELF_PATH, r'..\pics')
 # determines whether intermediate output files are stored
 DEBUG = False
-
+# on listing pages, I show the first line of content
+# truncate the line if longer limit
+PREVIEW_LINE_LIMIT = 135
 '''
 Notes
 the yaml files may be sensitive to tab characters
@@ -33,6 +35,7 @@ Random:
     - this should be above all easy to maintain
 
 TODO:
+    - perhaps DEBUG should be like log levels
     - ensure, no tabs (including in .yaml files)
     - jinja should throw exception on unspecified vars
 
@@ -130,14 +133,19 @@ def read_all(filepath)->str:
         return fp.read()
 
 
-def get_line(content_path)-> str:
+def get_line(content_path, maxlen=float('inf'))-> str:
     '''
     get first line of file
     '''
+    result = ''
     with open(content_path, encoding='utf-8') as fp:
         for line in fp:
-            return line
-    return ''
+            result = line
+            break
+    # truncate line if needed
+    if len(result) > maxlen:
+        result = f'{result[:maxlen]} ... '
+    return result
 
 
 def get_lines(content_path)-> list:
@@ -211,7 +219,7 @@ def generate_content_listing(metadata: LMetadata, items: list):
     listings = []
     for item in items:
         content_path = item.get_contentpath()
-        teaser = get_line(content_path)
+        teaser = get_line(content_path, maxlen=PREVIEW_LINE_LIMIT)
         listings.append(ItemView(item.title, teaser))
 
     # if subtext is unset, make it empty

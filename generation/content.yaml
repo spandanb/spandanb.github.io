@@ -1,7 +1,7 @@
 essays:
     - title: The Imperative to Moral Responsibility
       # date is in format (year-month-day)
-      date: 2020-07-11
+      date: 2020-07-14
       # content id is relative to <ROOT>\content\essays\
       content_id: moral-imperative.txt
       # template id is relative to <ROOT>\templates\
@@ -14,7 +14,7 @@ essays:
 
     - title: Sensemaking in the time of a Pandemic
       # date is in format (year-month-day)
-      date: 2020-07-11
+      date: 2020-04-11
       # content id is relative to <ROOT>\content\essays\
       content_id: sense-making-pandemic.txt
       # template id is relative to <ROOT>\templates\
@@ -35,10 +35,37 @@ poetry:
       image_attribution: Image by <a href="https://pixabay.com/users/openclipart-vectors-30363/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1294947">OpenClipart-Vectors</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1294947">Pixabay</a>
 
     - title: Samsara
-      date: 2020-01-01
+      date: 2020-08-09
       content_id: samsara.txt
       template_id: content-no-image.jinja.html
       # template_location: item-template-jumbotron.html
       image_id: bicycle.png
       image_attribution: Image by <a href="https://pixabay.com/users/openclipart-vectors-30363/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1294947">OpenClipart-Vectors</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1294947">Pixabay</a>
 
+    - title: Wanderer
+      date: 2020-02-01
+      content_id: wanderer.txt
+      template_id: content-image.jinja.html
+      image_id: astronaut.jpg
+      image_attribution: Image by <a href="https://pixabay.com/photos/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1209364">Free-Photos</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1209364">Pixabay</a>
+
+    - title: All The Things I have Lost
+      date: 2014-12-18
+      content_id: things-i-lost.txt
+      template_id: content-image.jinja.html
+      image_id: fog-hill.jpg
+      image_attribution: Image by <a href="https://pixabay.com/users/stocksnap-894430/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2572197">StockSnap</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2572197">Pixabay</a>
+
+
+
+random-thoughts:
+    - title: The Journey and the Choice
+      # date is in format (year-month-day)
+      date: 2020-12-13
+      content_id: the-choice.txt
+      #template_location: content-no-image.jinja.html
+      #template_location: content-jumbotron.jinja.html
+      template_id: content-image.jinja.html
+      # items may have an optional image; relative to <ROOT>\img
+      image_id: penguin.jpg
+      image_attribution: Image by <a href="https://pixabay.com/users/patrizia08-92110/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=657527">Patrizia08</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=657527">Pixabay</a>

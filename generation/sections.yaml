@@ -5,7 +5,7 @@ tech:
 
 essays:
     section_title: Essays
-    subtext: 
+    subtext:
     template_id: listing-jumbotron-no-image.jinja.html
 
 poetry:
@@ -24,3 +24,8 @@ photography:
     section_title: Photography
     subtext:
     image_content: true
+
+random-thoughts:
+    template_id: listing-images-jumbotron-no-image.jinja.html
+    section_title: Random Thoughts
+    subtext:
