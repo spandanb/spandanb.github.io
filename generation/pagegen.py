@@ -43,12 +43,12 @@ TODO:
 
 '''
 Design Decisions:
-- Transforming trees vs text: 
+- Transforming trees vs text:
 Everything can be expressed via jinja templates.
 But, this is not very elegant, since every bit of html that can change
-has to be controlled via variable. The alternative is to 
+has to be controlled via variable. The alternative is to
 apply tranformations on a tree. Transforming a tree is easier
-because, one can specify which node to find, and transform. 
+because, one can specify which node to find, and transform.
 I've opted for this when possible. But this does mean the tree
 has to be searchable and updatable.
 '''
@@ -112,6 +112,9 @@ class LMetadata:
 
     def __repr__(self):
          return f'LM[{self.__dict__}]'
+
+class ValidationError(Exception):
+    pass
 
 
 ### Utils
@@ -322,7 +325,33 @@ def generate_listings(listings_file: str, content_file: str, img_content_file: s
     return results
 
 
-def transform_html(listing_fpaths: dict, content_fpaths: dict):
+def construct_trees(listing_fpaths: dict, content_fpaths: dict) -> tuple:
+    '''
+    Creates tree for each listing and content file.
+    The return structure is same as the argument structure
+    '''
+    # section name -> tree
+    ltrees = {}
+    # section name -> [tree]
+    ctrees = defaultdict(list)
+    # parser
+    tparser = treeparser.TreeParser()
+    for (section, filepath) in listing_fpaths.items():
+        # read file to tree
+        tparser.feed(read_all(filepath))
+        tree = tparser.finalize()
+        ltrees[section] = tree
+
+    for section, filepaths in content_fpaths.items():
+        for idx, filepath in enumerate(filepaths):
+            tparser.feed(read_all(filepath))
+            tree = tparser.finalize()
+            ctrees[section].append(tree)
+
+    return ltrees, ctrees
+
+
+def transform_html(listing_fpaths: dict, content_fpaths: dict, listing_trees: dict, content_trees: dict):
     '''
     express transformations on a DOM tree. Some transformations, e.g.
     add class "active" on a class are easier expressed on a tree, than as
@@ -330,14 +359,14 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict):
     Arguments:
         listing_fpaths(dict): dict[section]-> listing_path
         content_fpaths(dict): dict[section]-> [content_paths]
+    Returns:
+        dict: section -> tree
     '''
 
-    tparser = treeparser.TreeParser()
     # handle listing files
-    for (section, filepath) in listing_fpaths.items():
-        # read file to tree
-        tparser.feed(read_all(filepath))
-        tree = tparser.finalize()
+    for section, filepath in listing_fpaths.items():
+        # lookup tree
+        tree = listing_trees[section]
 
         # set active on nav item
         node = tree.find_node_with_id(f'nav-item-{section}')
@@ -364,8 +393,8 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict):
     # handle content files
     for section, filepaths in content_fpaths.items():
         for idx, filepath in enumerate(filepaths):
-            tparser.feed(read_all(filepath))
-            tree = tparser.finalize()
+            # lookup tree
+            tree = content_trees[section][idx]
 
             #set navbar active
             node = tree.find_node_with_id(f'nav-item-{section}')
@@ -399,27 +428,54 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict):
                 fp.write(result)
 
 
-def validations(listing_fpaths, content_fpaths):
+def validations(listing_fpaths, content_fpaths, listing_trees, content_trees):
     '''
     TODO: apply validations
     1) ensure files aren't empty
     2) perhaps have a diff mode
     3) validate DOM tree- i.e. do all nodes closes
     '''
+    print('Applying validations....')
+    # validation: ensure files are empty
+    print('Applying validation: files not empty')
+    for filepath in listing_fpaths.values():
+        if os.path.getsize(filepath) == 0:
+            raise ValidationError(f"file {filepath} is empty")
+    for filepaths in content_fpaths.values():
+        for filepath in filepaths:
+            if os.path.getsize(filepath) == 0:
+                raise ValidationError(f"file {filepath} is empty")
+
+    print('Applying validation: ')
+
+
+def driver():
+    '''
+    generate pages
+    '''
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    content_file = os.path.join(dir_path, './content.yaml')
+    image_content_file = os.path.join(dir_path, './image_content.yaml')
+    listings_file = os.path.join(dir_path, './sections.yaml')
+
+    # section -> filepath
+    lfiles = generate_listings(listings_file, content_file, image_content_file)
+    # section -> [filepaths]
+    cfiles = generate_all_content(content_file)
+    #print_contents(content_file)
+
+    # construct trees
+    ltrees, ctrees = construct_trees(lfiles, cfiles)
+    # apply transforms
+    transform_html(lfiles, cfiles, ltrees, ctrees)
+    # apply validations
+    validations(lfiles, cfiles, ltrees, ctrees)
+
+
 
 
 if __name__ == "__main__":
     # determines whether intermediate files are written out separately
     DEBUG = False
     print(f'DEBUG is {DEBUG}')
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    content_file = os.path.join(dir_path, './content.yaml')
-    image_content_file = os.path.join(dir_path, './image_content.yaml')
-    listings_file = os.path.join(dir_path, './sections.yaml')
-
-    cfiles = generate_all_content(content_file)
-    lfiles = generate_listings(listings_file, content_file, image_content_file)
-    #print_contents(content_file)
-    transform_html(lfiles, cfiles)
-
-
+    driver()
