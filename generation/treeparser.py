@@ -125,9 +125,6 @@ def find_nodes_with_attr(node, attr, descend=True):
     '''
     find nodes with matching attr
     '''
-    def match_fn_nukeme(node):
-        return any(key for key, val in node.attrs if key == attr)
-
     match_fn = lambda node: any(key for key, val in node.attrs if key == attr)
     find_nodes_with_fn(match_fn, node, descend)
 
@@ -155,74 +152,119 @@ def find_nodes_with_tag(node, tag, descend=True):
 
 ### Processing
 
+
+
 class QMNode:
     '''
-    Queryable-Processable Node:
+    Queryable-Modifiable Node:
     represents a node, that can be queryied for descendenants matching certain
     properties or values.
     Creating a node class allows expressing API, like:
        - root.descendents(tag="foo").child().parent().child(text_equals)
-    Chaining is achieved by returning results in this class
+    Chaining is achieved by wrapping returning results in this class
     '''
-    def __init__(self, node: Node, tree):
+    def __init__(self, node: Node, tree, return_qmnode: bool=True):
         self.node = node
         # store ref to tree
         self._tree = tree
+        # whether return objects should be wrapped as QMNode
+        # TODO: is this needed?
+        self.return_qmnode = return_qmnode
+
+    def wrap_results(self, result: list, single: bool=True):
+        '''
+        utility method to wrap the results
+        depending on specificed `return_qmnode`
+        `single` determines whether return is scalar or list
+        '''
+        if not self.return_qmnode or len(result) == 0:
+            return result
+        # wrap only if specified
+        if single:
+            return QMNode(result[0], self._tree) if len(result) == 1 else None
+        else:
+            return [QMNode(node, self._tree) for node in result]
 
     def parent(self):
         '''
-        we need to initialize parent node with it's parent
+        return parent node
         '''
         return QMNode(self._tree.get_parent(self.node))
 
     def child(self, tag=None, attr=None, attrval=None):
         result = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=False, single=True)
-        return QMNode(results[0], self._tree) if len(result) == 1 else None
+        return self.wrap_results(result, single=True)
 
     def children(self, tag=None, attr=None, attrval=None):
         '''
         '''
-        matches = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=False, single=False)
-        return [QMNode(node, self._tree) for node in matches]
+        result = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=False, single=False)
+        return self.wrap_results(result, single=False)
 
     def descendent(self, tag=None, attr=None, attrval=None):
         '''
         '''
         result = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=True, single=True)
-        return QMNode(result[0], self._tree) if len(result) == 1 else None
+        return self.wrap_results(result, single=True)
 
     def descendents(self, tag=None, attr=None, attrval=None):
         '''
         '''
-        matches = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=True, single=False)
-        return [QMNode(node, self._tree) for node in matches]
+        result = Tree.find_nodes(self.node, tag=tag, attr=attr, attrval=attrval, descend=True, single=False)
+        return self.wrap_results(result, single=False)
 
-    def get_attr(self, attr, notfound=None):
+    def get_attr_index(self, attr):
+        '''
+        get the index to attr 
+        '''
         for idx, (key, value) in enumerate(self.node.attrs):
             if key == attr:
-                return val
-        return notfound
+                return idx
+        return -1
+    
+    def get_attr(self, attr: str, notfound=None):
+        '''
+        get attr value
+        '''
+        attridx = self.get_attr_index(attr)
+        if attridx == -1:
+            return notfound
+        key, value  = self.node.attrs[attridx]
+        return value
 
     def set_attr(self, attr, attrval):
         '''
         set attr
         '''
-        attridx = -1
-        node = self.node
-        for idx, (key, value) in enumerate(node.attrs):
-            if key == attr:
-                # print(f'attrname is "{attr}"')
-                attridx = idx
-                break
+        attridx = self.get_attr_index(attr)
         # if attr not found, add it
         if attridx == -1:
-            node.attrs.append((attr, attrval))
+            self.node.attrs.append((attr, attrval))
         else:
-            node.attrs[attridx] = (attr, attrval)
-
+            self.node.attrs[attridx] = (attr, attrval)
+        
     def set_class(self, classname):
+        '''
+        this will remove any existing classes
+        and set class=`classname`
+        '''
         self.set_attr("class", classname)
 
+    def add_class(self, classname):
+        '''
+        this will add a class to existing classes
+        '''
+        attridx = self.get_attr_index("class")
+        if attridx == -1:
+            self.node.attrs.append((attr, attrval))
+        else:
+            # check if the classname exists
+            _, value = self.node.attrs[attridx]
+            curr_classes = set(value.split())
+            # add if the class isn't already applied
+            if classname not in curr_classes:
+                new_classes = f'{value} {classname}'
+                self.node.attrs[attridx] = ("class", new_classes)
 
 class Tree:
     '''
@@ -414,24 +456,26 @@ class TreeParser(HTMLParser):
 
 
 class TreePrinter:
-
+    '''
+    handle printing tree
+    '''
     def __init__(self, root):
         self.root = root
 
-    def format_node(self, node: Node, is_starttag=True):
+    def format_node(self, node: Node, is_starttag=True)-> str:
         '''
         convert node to html text
         '''
         return self.format_starttag(node) if is_starttag else self.format_endtag(node)
 
-    def format_endtag(self, node):
+    def format_endtag(self, node)->str:
         '''
         '''
         if isinstance(node, (RootNode, ClosedNode)):
             return ''
         return f'</{node.tag}>'
 
-    def format_starttag(self, node):
+    def format_starttag(self, node)->str:
         '''
         '''
         if isinstance(node, RootNode):
@@ -447,7 +491,7 @@ class TreePrinter:
         else:
             return f'<{node.tag} {attrs}>'
 
-    def format_attrs(self, attrs):
+    def format_attrs(self, attrs)->str:
         '''
         attrs is a list of the form [(k1, v1)...(kn, vn)]
         '''
@@ -458,9 +502,10 @@ class TreePrinter:
             res.append(f'{key}="{value}"')
         return ' '.join(res)
 
-    def to_str(self, node: Node, result: list):
+    def to_str(self, node: Node, result: list)->None:
         '''
         recursive to_str
+        in-place modifies `result` object
         '''
         # handle start tag formatting
         text = self.format_node(node, True)
@@ -476,56 +521,9 @@ class TreePrinter:
         text = self.format_node(node, False)
         result.append(text)
 
-    def mk_doc(self):
+    def mk_doc(self)-> str:
         result = []
         self.to_str(self.root, result)
         return ''.join(result)
 
 
-
-def mk_tree(filepath):
-    fpath, fext = os.path.splitext(filepath)
-    outfilepath = f'{fpath}-rtrip.{fext}'
-
-    parser = TreeParser()
-    text = ''
-    #with open(filepath, encoding='utf-8') as fp:
-    #    text = fp.read()
-
-    text = '<a><b></b></a>'
-
-    parser.feed(text)
-    tree = parser.get_tree()
-
-    # apply transforms
-    #import pdb; pdb.set_trace()
-
-    printer = TreePrinter(parser.root)
-    with open(outfilepath, 'w', encoding='utf-8') as fp:
-        result = printer.mk_doc()
-        fp.write(result)
-
-    print(f'Read {filepath}; Writing to {outfilepath}')
-
-
-def test():
-    # parse
-    parser = TreeParser()
-    parser.feed('<html><body>foo</body></html>')
-    tree = parser.finalize()
-    # modify tree
-    root = tree.get_root(as_qmnode=True)
-    root.descendent('body').set_attr('class', 'fooclass')
-    # print tree
-    printer = TreePrinter(root.node)
-    expected = '<html><body class="fooclass">foo</body></html>'
-    actual = printer.mk_doc()
-    assert expected == actual, "test fail"
-
-
-
-if __name__ == '__main__':
-    #filepath = r'C:\Users\spand\universe\personal_website2\art-listing-generated.html'
-    filepath = r'C:\Users\spand\universe\html_parser\hello2.html'
-    #mk_tree(filepath)
-    test()

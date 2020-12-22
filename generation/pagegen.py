@@ -5,12 +5,14 @@ use jinja to generate site pages
 import re
 import os
 import yaml
+import itertools
 
 from collections import namedtuple, OrderedDict, defaultdict
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import textparser
 import treeparser
+import treediff
 
 ###  Config
 SELF_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -20,6 +22,7 @@ CONTENT_DIR = os.path.join(SELF_PATH, r'..\content')
 IMG_DIR = os.path.join(SELF_PATH, r'..\img')
 # IMG_CONTENT_DIR is where images produced by me are stored
 IMG_CONTENT_DIR = os.path.join(SELF_PATH, r'..\pics')
+INDEX_FILE = os.path.join(SELF_PATH, r'..\index.html')
 # determines whether intermediate output files are stored
 DEBUG = False
 # on listing pages, I show the first line of content
@@ -113,6 +116,7 @@ class LMetadata:
     def __repr__(self):
          return f'LM[{self.__dict__}]'
 
+
 class ValidationError(Exception):
     pass
 
@@ -121,6 +125,13 @@ class ValidationError(Exception):
 
 def get_relpath(fpath, refpath=OUTPUT_DIR):
     return os.path.relpath(fpath, refpath)
+
+
+def flatten(itable) -> list:
+    '''
+    flatten a 2-d iterable object
+    '''
+    return [subitem for item in itable for subitem in item]
 
 
 def decorate_path(filepath, dec):
@@ -325,7 +336,7 @@ def generate_listings(listings_file: str, content_file: str, img_content_file: s
     return results
 
 
-def construct_trees(listing_fpaths: dict, content_fpaths: dict) -> tuple:
+def construct_trees(listing_fpaths: dict, content_fpaths: dict, index_fpath: str) -> tuple:
     '''
     Creates tree for each listing and content file.
     The return structure is same as the argument structure
@@ -336,19 +347,26 @@ def construct_trees(listing_fpaths: dict, content_fpaths: dict) -> tuple:
     ctrees = defaultdict(list)
     # parser
     tparser = treeparser.TreeParser()
+
+    # create trees for listing files
     for (section, filepath) in listing_fpaths.items():
         # read file to tree
         tparser.feed(read_all(filepath))
         tree = tparser.finalize()
         ltrees[section] = tree
 
+    # create trees for content files
     for section, filepaths in content_fpaths.items():
         for idx, filepath in enumerate(filepaths):
             tparser.feed(read_all(filepath))
             tree = tparser.finalize()
             ctrees[section].append(tree)
 
-    return ltrees, ctrees
+    # create index.html tree
+    tparser.feed(read_all(index_fpath))
+    itree = tparser.finalize()
+
+    return ltrees, ctrees, itree
 
 
 def transform_html(listing_fpaths: dict, content_fpaths: dict, listing_trees: dict, content_trees: dict):
@@ -370,7 +388,7 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict, listing_trees: di
 
         # set active on nav item
         node = tree.find_node_with_id(f'nav-item-{section}')
-        node.set_class('active')
+        node.add_class('active')
 
         # enrich see more link on listing page
         # by creating a link to the referenced content page
@@ -398,7 +416,7 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict, listing_trees: di
 
             #set navbar active
             node = tree.find_node_with_id(f'nav-item-{section}')
-            node.set_class('active')
+            node.add_class('active')
 
             # set prev, next links
             # set prev
@@ -428,25 +446,66 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict, listing_trees: di
                 fp.write(result)
 
 
-def validations(listing_fpaths, content_fpaths, listing_trees, content_trees):
+def validations(listing_fpaths: dict, content_fpaths: dict, index_fpath: str,
+                listing_trees: dict, content_trees: dict, index_tree: dict):
     '''
-    TODO: apply validations
+    Apply validations to generated files.
+
+
     1) ensure files aren't empty
     2) perhaps have a diff mode
     3) validate DOM tree- i.e. do all nodes closes
     '''
     print('Applying validations....')
-    # validation: ensure files are empty
-    print('Applying validation: files not empty')
-    for filepath in listing_fpaths.values():
+
+    # validation: ensure files are not empty
+    vname = 'files not empty'
+    print(f'Applying validation: {vname}')
+    # combine all files into one iterable
+    filepaths = itertools.chain(listing_fpaths.values(), flatten(content_fpaths.values()), [index_fpath])
+    for filepath in filepaths:
         if os.path.getsize(filepath) == 0:
             raise ValidationError(f"file {filepath} is empty")
-    for filepaths in content_fpaths.values():
-        for filepath in filepaths:
-            if os.path.getsize(filepath) == 0:
-                raise ValidationError(f"file {filepath} is empty")
 
-    print('Applying validation: ')
+#    for filepath in listing_fpaths.values():
+#        if os.path.getsize(filepath) == 0:
+#            raise ValidationError(f"file {filepath} is empty")
+#    for filepaths in content_fpaths.values():
+#        for filepath in filepaths:
+#            if os.path.getsize(filepath) == 0:
+#                raise ValidationError(f"file {filepath} is empty")
+
+    # index and generated should have identical navbar, except for active
+    vname = 'index matches generated'
+    print(f'Applying validation: {vname}')
+    # since navbar is generated from same template
+    # need to only compare index with only one generated file
+    # assuming there is one navbar
+    # find navbar elements
+    idx_nav = index_tree.get_root().descendent(tag='nav')
+    gen_nav = next(iter(listing_trees.values())).get_root().descendent(tag='nav')
+    # get page name
+    gen_page = next(iter(listing_fpaths.values()))
+
+    print(f'comparing {gen_page}, {index_fpath}')
+    # get diff
+    navdiff = treediff.compare(idx_nav, gen_nav)
+    #treediff.pretty_print_diff(navdiff)
+    for subdiff in navdiff:
+        if isinstance(subdiff, treediff.UpdateAttrib):
+            attrname = subdiff.path.tail().node
+            if attrname == 'class':
+                classdiff = set(subdiff.old_value.split()).symmetric_difference(set(subdiff.new_value.split()))
+                # check that the only class is `active`
+                if len(classdiff) != 1 or next(iter(classdiff)) != 'active':
+                    raise ValidationError(f'Unexpected change {subdiff}')
+            else:
+                raise ValidationError(f'Unexpected change {subdiff}')
+
+        else:
+            # this indicates something isn't as expected
+            raise ValidationError(f'Unexpected change {subdiff}')
+
 
 
 def driver():
@@ -465,12 +524,11 @@ def driver():
     #print_contents(content_file)
 
     # construct trees
-    ltrees, ctrees = construct_trees(lfiles, cfiles)
+    ltrees, ctrees, itree = construct_trees(lfiles, cfiles, INDEX_FILE)
     # apply transforms
     transform_html(lfiles, cfiles, ltrees, ctrees)
     # apply validations
-    validations(lfiles, cfiles, ltrees, ctrees)
-
+    validations(lfiles, cfiles, INDEX_FILE, ltrees, ctrees, itree)
 
 
 
