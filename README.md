@@ -6,5 +6,8 @@ python -m venv virtenv
 cd <ROOT>/jgeneration
 python pagegen.py
 
+## Running tests
+pytest <test_filename>
+
 ## Troubleshooting
 - if website doesn't update, try pushing an empty commit
