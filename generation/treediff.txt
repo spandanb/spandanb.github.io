@@ -1,0 +1,81 @@
+Overview
+--------
+This document:
+ - specs out the semantics for calculating the
+diff between two tree structures.
+ - describes the algorithm for calculating the diff
+
+Semantics
+---------
+The abstact problem, is give a DOM (html) trees t0, t1
+how do I express the difference between them.
+
+The approach I've taken (inspired by other structured data
+diff tools), is to express them as a list of operations, which
+can be applied to `t0` to get `t1`, i.e. diff(t0) -> t1
+
+NB: opted to not support move-node operation
+a move-node operation would allow some diffs to be more succinctly expressed
+but would be tricky to implement
+
+The ops are:
+    - update-body (path, new-text)
+        - path is path to node to modify
+        - updates body (contents of tag) with new-text
+
+    - update-attrib (path, old-value, new-value)
+        - path is path to attrib to modify
+        - updates path with value `old-value` to `new-value`
+    - add-attrib (path, new-value)
+
+    - del-attrib (path)
+
+    - add-node (path, new-node)
+        - path is path to parent node
+
+    - del-node (path)
+        - nuke node at path
+
+Path Object
+-----------
+The path can be expressed in many distinct/un-ambiguous ways.
+Currently,
+<root>/<child>/...
+Here each element of the path is a triple:
+    (relationship-to-parent, position, node)
+     relationship-to-parent - (child|attr)
+     position - position (in the children of the node)
+     node - the node itself (represented as a string repr of tag/attr)
+
+/root/(child, 0, div)/(attr, -1, 'foo')
+
+e.g. str representations:
+/root/(child[N], div)/(attr, attrname)
+
+Diff Algorithm
+--------------
+the algorithm is:
+- start with root nodes, p and r
+- iterate over children, compare children
+- two nodes are compared like:
+    - check tag; if tag doesn't match
+    - `del-node` left handside node, `add-node` right hand-side node
+    - if attrs exists but doesn't match, `update-attrib`
+    - if attr doesn't exist on left, `add-attrib`
+    - if attr doesn't exist on right, `del-attrib`
+
+Notes
+-----
+- If a algorithm to apply a diff, i.e. t0 + diff -> t1
+were to be implemented, it would have to work in two phases.
+First, identify the transformations on the tree, on the specific
+nodes, and then apply them. This is relevant, when you apply
+a del/add and that messes with the paths of all other objects.
+
+- excluded `move` op- quiet tricky to implement
+
+I'll assume all root elements are identical, even though
+in actuality the doctype is on the rootelement. An alternative
+would be for the rootelement too be a true unitary type,
+and instead have a child call "document"- which has the doctype property
+- seems too steep a price for elegance
