@@ -451,10 +451,13 @@ def validations(listing_fpaths: dict, content_fpaths: dict, index_fpath: str,
     '''
     Apply validations to generated files.
 
-
+    Currently applying:
     1) ensure files aren't empty
-    2) perhaps have a diff mode
-    3) validate DOM tree- i.e. do all nodes closes
+    2) index file and a generated file navbar only differ in 'active' class
+
+    Thoughts:
+    - perhaps have a diff mode
+    - validate DOM tree- i.e. do all nodes closes
     '''
     print('Applying validations....')
 
@@ -467,15 +470,7 @@ def validations(listing_fpaths: dict, content_fpaths: dict, index_fpath: str,
         if os.path.getsize(filepath) == 0:
             raise ValidationError(f"file {filepath} is empty")
 
-#    for filepath in listing_fpaths.values():
-#        if os.path.getsize(filepath) == 0:
-#            raise ValidationError(f"file {filepath} is empty")
-#    for filepaths in content_fpaths.values():
-#        for filepath in filepaths:
-#            if os.path.getsize(filepath) == 0:
-#                raise ValidationError(f"file {filepath} is empty")
-
-    # index and generated should have identical navbar, except for active
+    # validation: index and generated should have identical navbar, except for active
     vname = 'index matches generated'
     print(f'Applying validation: {vname}')
     # since navbar is generated from same template
