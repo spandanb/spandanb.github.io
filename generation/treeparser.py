@@ -497,6 +497,7 @@ class TreeParser(HTMLParser):
 class TreePrinter:
     """
     handle printing tree
+    NOTE: this could be implemented
     """
 
     def format_node(self, node: Node, is_starttag: bool = True) -> str:
@@ -539,7 +540,7 @@ class TreePrinter:
 
     def to_str(self, node: Node, result: list) -> None:
         """
-        recursive converts node to string, i.e. html text representation
+        recursively converts node to string, i.e. html text representation
         each converted html chunk is stored in the in-place modified `result`
         """
         # handle start tag formatting

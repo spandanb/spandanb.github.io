@@ -65,8 +65,8 @@ def insert_footnote_links(lines: List[str]) -> List[str]:
         if match is None:
             # there are no footnotes
             break
-        fnnum, fnbody = match.groups()
-        lines[lineno] = f'<span id="footnote-{fnnum}">{line}</span>'
+        footnum, fnbody = match.groups()
+        lines[lineno] = f'<span id="footnote-{footnum}">{line}</span>'
 
         lineno -= 1
     return lines
@@ -156,8 +156,7 @@ def lines_to_chunks(lines: List[str]) -> str:
             output.append("<br>")
 
     # \n to make more human-readable
-    output = "<p>\n" + "\n".join(output) + "\n</p>"
-    return output
+    return "<p>\n" + "\n".join(output) + "\n</p>"
 
 
 def text_to_html(lines: List[str]) -> str:
@@ -170,5 +169,4 @@ def text_to_html(lines: List[str]) -> str:
     lines = enrich_links(lines)
     lines = enrich_subheadings(lines)
     # call this last; all the rest manipulate text as unmarked text
-    lines = lines_to_chunks(lines)
-    return lines
+    return lines_to_chunks(lines)

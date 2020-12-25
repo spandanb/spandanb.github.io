@@ -345,7 +345,7 @@ def comp(node1, node2, path: TreePath, diff: list):
         elif child2 is None:
             # del child1
             new_path = path.get_childpath(child1, idx)
-            diff.append(DelNode(new_path, child1))
+            diff.append(DelNode(new_path))
         else:
             # both child1 and child2 are defined and have same path
             # NOTE: paths are always with respect to left hand side

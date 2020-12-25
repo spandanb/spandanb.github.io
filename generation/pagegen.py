@@ -8,7 +8,9 @@ import itertools
 
 from collections import namedtuple, defaultdict
 from jinja2 import Environment, FileSystemLoader
-from typing import List
+
+from typing import List, Union
+from collections.abc import Iterable
 
 import textparser
 import treeparser
@@ -151,7 +153,7 @@ def get_relpath(fpath: str, refpath=OUTPUT_DIR) -> str:
     return os.path.relpath(fpath, refpath)
 
 
-def flatten(iterable: List) -> List:
+def flatten(iterable: Iterable) -> List:
     """
     flatten a 2-d iterable object
     """
@@ -362,6 +364,7 @@ def generate_listings(
             continue
 
         lmetadata = LMetadata(section=section, **props)
+        listing: List[Union[ICMetadata, CMetadata]] = []
         if lmetadata.image_content:
             listing = [
                 ICMetadata(section=section, **item)
@@ -425,6 +428,8 @@ def transform_html(
         dict: section -> tree
     """
 
+    printer = treeparser.TreePrinter()
+
     # handle listing files
     for section, filepath in listing_fpaths.items():
         # lookup tree
@@ -446,10 +451,8 @@ def transform_html(
         # write output
         outfilepath = decorate_path(filepath, "mutated") if DEBUG else filepath
         print(f"transforming {section} at {filepath} to {outfilepath}")
-        # import pdb; pdb.set_trace()
-        printer = treeparser.TreePrinter(tree.get_root(as_qmnode=False))
         with open(outfilepath, "w", encoding="utf-8") as fp:
-            result = printer.mk_doc()
+            result = printer.mk_doc(tree.get_root(as_qmnode=False))
             fp.write(result)
 
     # handle content files
@@ -483,10 +486,8 @@ def transform_html(
             # get output filepath
             outfilepath = decorate_path(filepath, "mutated") if DEBUG else filepath
             print(f"transforming {section} at {filepath} to {outfilepath}")
-            # printer = parser.TreePrinter(tparser.root)
-            printer = treeparser.TreePrinter(tree.get_root(as_qmnode=False))
             with open(outfilepath, "w", encoding="utf-8") as fp:
-                result = printer.mk_doc()
+                result = printer.mk_doc(tree.get_root(as_qmnode=False))
                 fp.write(result)
 
 
@@ -496,7 +497,7 @@ def validations(
     index_fpath: str,
     listing_trees: dict,
     content_trees: dict,
-    index_tree: dict,
+    index_tree: treeparser.Tree,
 ):
     """
     Apply validations to generated files.
