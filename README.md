@@ -6,6 +6,12 @@ python -m venv virtenv
 cd <ROOT>/jgeneration
 python pagegen.py
 
+## Before Committing Code
+- pytest
+- black
+- flake8
+- mypy
+
 ## Running tests
 pytest <test_filename>
 

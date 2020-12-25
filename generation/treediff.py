@@ -1,13 +1,12 @@
-'''
+"""
 This module implements a diff algorithm
 for calculating the diff between two DOM trees.
 See: treediff.txt for notes
-'''
+"""
 from enum import Enum
 from itertools import zip_longest
 
-from treeparser import QMNode, DataNode, CommentNode, RootNode, TreeParser
-
+from treeparser import QMNode, DataNode, CommentNode, RootNode
 
 
 class ValidationException(Exception):
@@ -15,12 +14,13 @@ class ValidationException(Exception):
 
 
 class Relationship(Enum):
-    '''
+    """
     A path to an element in a tree is encoded
     as a list of subpaths, where each subpath is
     a child of the parent subpath.
     This enum, en
-    '''
+    """
+
     Child = 1
     # this is a terminal relationship, i.e. there
     # can't be any children of attr
@@ -30,9 +30,10 @@ class Relationship(Enum):
 
 
 class UpdateBody:
-    '''
+    """
     represents a update-body diff operation
-    '''
+    """
+
     def __init__(self, path, new_body):
         self.path = path
         self.new_body = new_body
@@ -42,16 +43,19 @@ class UpdateBody:
 
 
 class UpdateAttrib:
-    '''
+    """
     represents a update-attrib diff operation
-    '''
+    """
+
     def __init__(self, path, old_value, new_value):
         self.path = path
         self.old_value = old_value
-        self.new_value = new_value # str
+        self.new_value = new_value  # str
 
     def __repr__(self):
-        return f'UpdateAttrib [path="{self.path}", "{self.old_value}->{self.new_value}"]'
+        return (
+            f'UpdateAttrib [path="{self.path}", "{self.old_value}->{self.new_value}"]'
+        )
 
 
 class AddAttrib:
@@ -72,10 +76,11 @@ class DelAttrib:
 
 
 class AddNode:
-    '''
+    """
     # TODO: rename AddNode
     represents a add diff operation
-    '''
+    """
+
     def __init__(self, path, child_node, child_pos):
         self.path = path
         self.child_node = child_node
@@ -86,10 +91,11 @@ class AddNode:
 
 
 class DelNode:
-    '''
+    """
     # TODO: rename DelNode
     represents a update-body del operation
-    '''
+    """
+
     def __init__(self, path):
         self.path = path
 
@@ -98,19 +104,20 @@ class DelNode:
 
 
 class PathElement:
-    '''
+    """
     represents a element in path
-    '''
+    """
+
     @classmethod
     def root_node(cls, rootnode):
         return cls(Relationship.Null, -1, rootnode)
 
     def __init__(self, relationship: Relationship, node, position: int = -1):
-        '''
+        """
         `relationship` is w.r.t. to parent node
         `positions` is position in child
         `node` is child; can be tag (
-        '''
+        """
         self.relationship = relationship
         self.node = node
         self.position = position
@@ -120,54 +127,54 @@ class PathElement:
 
     def __repr__(self):
         if self.is_root():
-            return ('PNode(root)')
+            return "PNode(root)"
         elif self.relationship == Relationship.Child:
-            return f'PNode(child[{self.position}], {self.node.tag})'
+            return f"PNode(child[{self.position}], {self.node.tag})"
         elif self.relationship == Relationship.Attr:
-            return f'PNode(Attr[{self.node}])'
+            return f"PNode(Attr[{self.node}])"
         else:
-            raise ValidationException('Unrecognized operation')
-
+            raise ValidationException("Unrecognized operation")
 
 
 class TreePath:
-    '''
+    """
     represents a path to an element
     a `TreePath` is composed of many `PathElement` objects
-    '''
+    """
+
     def __init__(self):
         self.path = []
 
     def copy(self):
-        '''
+        """
         return a copy of the path
-        '''
+        """
         new_path = TreePath()
         new_path.path = self.path[:]
         return new_path
 
     def append(self, child_pnode):
-        '''
+        """
         append `child_pnode` to path
-        '''
+        """
         self.path.append(child_pnode)
 
     def unwrap(self):
         return self.path
 
     def tail(self):
-        '''return tail element'''
+        """return tail element"""
         return self.path[-1]
 
     def __repr__(self):
-        pathrepr = r'/'.join([repr(sub_path) for sub_path in self.path])
-        return f'Path({pathrepr})'
+        pathrepr = r"/".join([repr(sub_path) for sub_path in self.path])
+        return f"Path({pathrepr})"
 
     def get_childpath(self, child_node, child_pos):
-        '''
+        """
         return a new `TreePath` node
         with a child appended
-        '''
+        """
         # copy current path
         new_path = self.copy()
         # encode the newnode
@@ -176,10 +183,10 @@ class TreePath:
         return new_path
 
     def get_attrpath(self, attr):
-        '''
+        """
         return a new `TreePath` node
         with a child appended
-        '''
+        """
         # copy current path
         new_path = self.copy()
         # encode the newnode
@@ -190,11 +197,12 @@ class TreePath:
 
 ### Utilities
 
+
 def preorder_paths(node, path):
-    '''
+    """
     gets paths to all descendents rooted at `node`
     preorder, i.e. starting with the deepest descendents and going left->right, then node
-    '''
+    """
     # if node has child, descend
     for idx, child in enumerate(node.children):
         # if path isinstance `TreePath`
@@ -205,9 +213,9 @@ def preorder_paths(node, path):
 
 
 def postorder_paths(node, path):
-    '''
+    """
     yield paths in node, descendents from left to right
-    '''
+    """
     yield path.copy()
     for idx, child in enumerate(node.children):
         child_path = path.get_childpath(child, idx)
@@ -215,32 +223,33 @@ def postorder_paths(node, path):
 
 
 def get_body(node):
-    '''
+    """
     return body of node
-    '''
-    return getattr(node, 'data', getattr(node, 'comment', None))
+    """
+    return getattr(node, "data", getattr(node, "comment", None))
 
 
 ### Comparison algorithm
 
+
 def comp_classes(node1, node2):
-    '''
+    """
     return True if classes and tag match
-    '''
+    """
     return type(node1).__name__ == type(node2).__name__ and node1.tag == node2.tag
 
 
 def comp_attrs(node1, node2):
-    '''
+    """
     compare attributes and return match (bool)
     and dicts representsing
     attributes to be added, deleted, modified, w.r.t. to node1,
     i.e. these changes applied to node1 will lead to
     same attrs as node2
-    '''
+    """
     add_ops = {}
     # only track attr name for del
-    del_ops = set() # attr
+    del_ops = set()  # attr
     mod_ops = {}  # attr -> (oldval, newval)
 
     attrs1 = dict(node1.attrs) if node1.attrs else {}
@@ -263,9 +272,9 @@ def comp_attrs(node1, node2):
 
 
 def comp_body(node1, node2):
-    '''
+    """
     True if both are DataNode and CommentNode and body is the same, False otherwise
-    '''
+    """
     if isinstance(node1, DataNode) and isinstance(node2, DataNode):
         return node1.data == node2.data
     if isinstance(node1, DataNode) or isinstance(node2, DataNode):
@@ -283,9 +292,9 @@ def comp_body(node1, node2):
 
 
 def comp(node1, node2, path: TreePath, diff: list):
-    '''
+    """
     implement recursive compare
-    '''
+    """
     # compare class names/tags
     if not comp_classes(node1, node2):
         # classes/tags don't match
@@ -295,7 +304,7 @@ def comp(node1, node2, path: TreePath, diff: list):
 
         # add node2 and then all its descendents
         for sub_path in postorder_paths(node2, path):
-            child_pos  = sub_path.tail().position
+            child_pos = sub_path.tail().position
             child_node = sub_path.tail().node
             diff.append(AddNode(sub_path, child_node, child_pos))
 
@@ -326,7 +335,7 @@ def comp(node1, node2, path: TreePath, diff: list):
     # compare children
     for idx, (child1, child2) in enumerate(zip_longest(node1.children, node2.children)):
         if child1 is None and child2 is None:
-            pass # noop
+            pass  # noop
         elif child1 is None:
             # add child2 to as child of path at idx
             new_path = path.copy()
@@ -345,9 +354,9 @@ def comp(node1, node2, path: TreePath, diff: list):
 
 
 def compare(root1, root2):
-    '''
+    """
     setup and invoke `comp`
-    '''
+    """
     # need to unwrap QMNodes
     if isinstance(root1, QMNode):
         root1 = root1.node
@@ -362,52 +371,26 @@ def compare(root1, root2):
 
 ### main
 
+
 def pretty_print_diff(diff):
-    '''
+    """
     helper for pretty printing diff
-    '''
-    print('printing diff:')
+    """
+    print("printing diff:")
     for operation in diff:
         if isinstance(operation, UpdateBody):
-            print(f'update-body, {operation.path}, {operation.new_body}')
+            print(f"update-body, {operation.path}, {operation.new_body}")
         elif isinstance(operation, AddAttrib):
-            print(f'add-attrib, {operation.path}, {operation.value}')
+            print(f"add-attrib, {operation.path}, {operation.value}")
         elif isinstance(operation, DelAttrib):
-            print(f'del-attrib, {operation.path}')
+            print(f"del-attrib, {operation.path}")
         elif isinstance(operation, UpdateAttrib):
-            print(f'update-attrib, {operation.path}, {operation.new_value}')
+            print(f"update-attrib, {operation.path}, {operation.new_value}")
         elif isinstance(operation, AddNode):
-            print(f'add, {operation.path}, {operation.child_pos}, {operation.child_node}')
+            print(
+                f"add, {operation.path}, {operation.child_pos}, {operation.child_node}"
+            )
         elif isinstance(operation, DelNode):
-            print(f'del, {operation.path}')
+            print(f"del, {operation.path}")
         else:
-            print(f'ERROR: unrecognized op: {operation}')
-
-
-def test():
-    #text0 = '<html><body class="man">foo</body></html>'
-    #text1 = '<html><body class="poo">food</body></html>'
-
-    text0 = '<html class="foo" id="meID">body1</html>'
-    text1 = '<html class="bar">body1</html>'
-
-    #text0 = '<html class="foo"><div>body0</div></html>'
-    #text1 = '<html class="foo"><span>body0</span></html>'
-
-    parser = TreeParser()
-
-    parser.feed(text0)
-    tree = parser.finalize()
-    root0 = tree.get_root(as_qmnode=True)
-
-    parser.feed(text1)
-    tree = parser.finalize()
-    root1 = tree.get_root(as_qmnode=True)
-    diff = compare(root0, root1)
-    # print(diff)
-    pretty_print_diff(diff)
-
-
-
-if __name__ == '__main__':
-    test()
+            print(f"ERROR: unrecognized op: {operation}")

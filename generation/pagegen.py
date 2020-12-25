@@ -1,14 +1,14 @@
-'''
+"""
 use jinja to generate site pages
 
-'''
-import re
+"""
 import os
 import yaml
 import itertools
 
-from collections import namedtuple, OrderedDict, defaultdict
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from collections import namedtuple, defaultdict
+from jinja2 import Environment, FileSystemLoader
+from typing import List
 
 import textparser
 import treeparser
@@ -16,19 +16,19 @@ import treediff
 
 ###  Config
 SELF_PATH = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(SELF_PATH, r'..\templates')
-OUTPUT_DIR = os.path.join(SELF_PATH, r'..')
-CONTENT_DIR = os.path.join(SELF_PATH, r'..\content')
-IMG_DIR = os.path.join(SELF_PATH, r'..\img')
+TEMPLATE_DIR = os.path.join(SELF_PATH, r"..\templates")
+OUTPUT_DIR = os.path.join(SELF_PATH, r"..")
+CONTENT_DIR = os.path.join(SELF_PATH, r"..\content")
+IMG_DIR = os.path.join(SELF_PATH, r"..\img")
 # IMG_CONTENT_DIR is where images produced by me are stored
-IMG_CONTENT_DIR = os.path.join(SELF_PATH, r'..\pics')
-INDEX_FILE = os.path.join(SELF_PATH, r'..\index.html')
+IMG_CONTENT_DIR = os.path.join(SELF_PATH, r"..\pics")
+INDEX_FILE = os.path.join(SELF_PATH, r"..\index.html")
 # determines whether intermediate output files are stored
 DEBUG = False
 # on listing pages, I show the first line of content
 # truncate the line if longer limit
 PREVIEW_LINE_LIMIT = 135
-'''
+"""
 Notes
 the yaml files may be sensitive to tab characters
 
@@ -42,9 +42,9 @@ TODO:
     - ensure, no tabs (including in .yaml files)
     - jinja should throw exception on unspecified vars
 
-'''
+"""
 
-'''
+"""
 Design Decisions:
 - Transforming trees vs text:
 Everything can be expressed via jinja templates.
@@ -54,120 +54,146 @@ apply tranformations on a tree. Transforming a tree is easier
 because, one can specify which node to find, and transform.
 I've opted for this when possible. But this does mean the tree
 has to be searchable and updatable.
-'''
+"""
 
-### DataStructs
+### Data Structs/Classes
+
 
 class CMetadata:
-    '''
+    """
     Content metadata
-    '''
-    def __init__(self, title: str, date: str, section: str, content_id: str, template_id: str,
-                 image_id: str = '', image_attribution: str = ''):
-       self.title = title
-       self.date = date
-       self.section = section
-       self.content_id = content_id
-       self.template_id = template_id
-       self.image_id = image_id
-       self.image_attribution = image_attribution
+    """
+
+    def __init__(
+        self,
+        title: str,
+        date: str,
+        section: str,
+        content_id: str,
+        template_id: str,
+        image_id: str = "",
+        image_attribution: str = "",
+    ):
+        self.title = title
+        self.date = date
+        self.section = section
+        self.content_id = content_id
+        self.template_id = template_id
+        self.image_id = image_id
+        self.image_attribution = image_attribution
 
     def __repr__(self):
-         return f'CM[{self.__dict__}]'
+        return f"CM[{self.__dict__}]"
 
     def get_contentpath(self):
         return os.path.join(CONTENT_DIR, self.section, self.content_id)
 
 
 class ICMetadata:
-    '''
+    """
     Image Content metadata
-    '''
-    def __init__(self, title: str, date: str, section: str, image_id: str, subtext: str):
-       self.title = title
-       self.date = date
-       self.section = section
-       self.image_id = image_id
-       self.subtext = subtext
+    """
+
+    def __init__(
+        self, title: str, date: str, section: str, image_id: str, subtext: str
+    ):
+        self.title = title
+        self.date = date
+        self.section = section
+        self.image_id = image_id
+        self.subtext = subtext
 
     def __repr__(self):
-         return f'ICM[{self.__dict__}]'
+        return f"ICM[{self.__dict__}]"
 
     def get_contentpath(self):
         return os.path.join(IMG_CONTENT_DIR, self.image_id)
 
 
 class LMetadata:
-    '''
+    """
     listing metadata
-    '''
-    def __init__(self, section: str, section_title: str, template_id: str, subtext: str='', image_content: bool=False):
+    """
 
-        '''
-        section is a no-whitespace, lowercase id
-        section_name is case-, whitespace- sensitive displayed name
-        '''
+    def __init__(
+        self,
+        section: str,
+        section_title: str,
+        template_id: str,
+        subtext: str = "",
+        image_content: bool = False,
+    ):
+        # section has no whitespace - unique id
         self.section = section
+        # actual title, with whitespace and capitalization
         self.section_title = section_title
         self.template_id = template_id
         self.subtext = subtext
         self.image_content = image_content
 
     def __repr__(self):
-         return f'LM[{self.__dict__}]'
+        return f"LM[{self.__dict__}]"
 
 
 class ValidationError(Exception):
-    pass
+    """
+    Generic exception raised on validation failure
+    """
 
 
 ### Utils
 
-def get_relpath(fpath, refpath=OUTPUT_DIR):
+
+def get_relpath(fpath: str, refpath=OUTPUT_DIR) -> str:
+    """
+    get `fpath` relative to `refpath`
+    """
     return os.path.relpath(fpath, refpath)
 
 
-def flatten(itable) -> list:
-    '''
+def flatten(iterable: List) -> List:
+    """
     flatten a 2-d iterable object
-    '''
-    return [subitem for item in itable for subitem in item]
+    """
+    return [subitem for item in iterable for subitem in item]
 
 
-def decorate_path(filepath, dec):
-    '''
-    foo.html, 'meow' -> foo-meow.html
-    '''
+def decorate_path(filepath: str, dec: str) -> str:
+    """
+    example: "foo.html", "meow" -> foo-meow.html
+    """
     fpath, ext = os.path.splitext(filepath)
-    return f'{fpath}-{dec}{ext}'
+    return f"{fpath}-{dec}{ext}"
 
 
-def read_all(filepath)->str:
-    with open(filepath, encoding='utf-8') as fp:
+def read_all(filepath: str) -> str:
+    """Read entire file as string"""
+    with open(filepath, encoding="utf-8") as fp:
         return fp.read()
 
 
-def get_line(content_path, maxlen=float('inf'))-> str:
-    '''
-    get first line of file
-    '''
-    result = ''
-    with open(content_path, encoding='utf-8') as fp:
+def get_line(content_path: str, maxlen: int = 1000) -> str:
+    """
+    get first line from file at `content_path`
+    return atmost `maxlen` characters of first line
+    """
+    result = ""
+    with open(content_path, encoding="utf-8") as fp:
         for line in fp:
             result = line
             break
     # truncate line if needed
     if len(result) > maxlen:
-        result = f'{result[:maxlen]} ... '
+        result = f"{result[:maxlen]} ... "
     return result
 
 
-def get_lines(content_path)-> list:
-    '''
+def get_lines(content_path: str) -> List:
+    """
     get all lines at filepath
-    '''
+    """
     lines = []
-    with open(content_path, encoding='utf-8') as fp:
+    with open(content_path, encoding="utf-8") as fp:
         lines = fp.readlines()
     return lines
 
@@ -175,59 +201,56 @@ def get_lines(content_path)-> list:
 ### Content Generation
 
 
-def generate_content(metadata: CMetadata)->str:
-    '''
-    generate content for file specified in
-    Assumptions:
-        -
-    '''
+def generate_content(metadata: CMetadata) -> str:
+    """
+    generate content for file specified in `metadata`
+    and write output to output file. Returns output-filepath
+    """
     # convert text content to html block
     content_path = metadata.get_contentpath()
 
-    # note these transformations are order dependenent
     text = get_lines(content_path)
     block = textparser.text_to_html(text)
 
     # configure jinja environment
-    env = Environment(
-        loader=FileSystemLoader(TEMPLATE_DIR),
-        # disabled because this escapes all the html
-        # autoescape=select_autoescape(['html'])
-    )
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     # find template
     template = env.get_template(metadata.template_id)
 
     # render template
     image_location = get_relpath(os.path.join(IMG_DIR, metadata.image_id))
-    rendered = template.render(title=metadata.title,
-                date=metadata.date, body=block,
-                image_location=image_location,
-                image_attribution=metadata.image_attribution,
-                is_content_page=True)
+    rendered = template.render(
+        title=metadata.title,
+        date=metadata.date,
+        body=block,
+        image_location=image_location,
+        image_attribution=metadata.image_attribution,
+        is_content_page=True,
+    )
 
     # content_id is: <foo>.txt
     baseid, _ = os.path.splitext(metadata.content_id)
     # write output
     if DEBUG:
-        output_filepath = os.path.join(OUTPUT_DIR, f'{baseid}-generated.html')
+        output_filepath = os.path.join(OUTPUT_DIR, f"{baseid}-generated.html")
     else:
-        output_filepath = os.path.join(OUTPUT_DIR, f'{baseid}.html')
-    print(f'writing {metadata.section} {baseid} to {output_filepath}')
-    with open(output_filepath, 'w', encoding='utf-8') as fp:
+        output_filepath = os.path.join(OUTPUT_DIR, f"{baseid}.html")
+    print(f"writing {metadata.section} {baseid} to {output_filepath}")
+    with open(output_filepath, "w", encoding="utf-8") as fp:
         fp.write(rendered)
     return output_filepath
 
 
-def generate_content_listing(metadata: LMetadata, items: list):
-    '''
-    generate a specific listing page
-    '''
+def generate_content_listing(metadata: LMetadata, items: list) -> str:
+    """
+    generate a specific listing page and return output filepath
+    """
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     # find template
     template = env.get_template(metadata.template_id)
 
     # represents how an item will be viewed
-    ItemView = namedtuple('ItemView', 'title teaser')
+    ItemView = namedtuple("ItemView", "title teaser")
 
     # transform items into listings
     listings = []
@@ -239,57 +262,67 @@ def generate_content_listing(metadata: LMetadata, items: list):
     # if subtext is unset, make it empty
     # TODO: maybe the subtext element in the listing should be ommitted?
     if not metadata.subtext:
-        metadata.subtext = ''
+        metadata.subtext = ""
 
-    rendered = template.render(section_title=metadata.section_title,
-                               subtext=metadata.subtext,
-                               listings=listings)
+    rendered = template.render(
+        section_title=metadata.section_title,
+        subtext=metadata.subtext,
+        listings=listings,
+    )
     if DEBUG:
-        output_filepath = os.path.join(OUTPUT_DIR, f'{metadata.section}-listing-generated.html')
+        output_filepath = os.path.join(
+            OUTPUT_DIR, f"{metadata.section}-listing-generated.html"
+        )
     else:
-        output_filepath = os.path.join(OUTPUT_DIR, f'{metadata.section}-listing.html')
-    print(f'writing listing {metadata.section} to {output_filepath} with {len(items)} items')
-    with open(output_filepath, 'w', encoding='utf-8') as fp:
+        output_filepath = os.path.join(OUTPUT_DIR, f"{metadata.section}-listing.html")
+    print(
+        f"writing listing {metadata.section} to {output_filepath} with {len(items)} items"
+    )
+    with open(output_filepath, "w", encoding="utf-8") as fp:
         fp.write(rendered)
     return output_filepath
 
 
-def generate_image_listing(metadata: LMetadata, items: list):
-    '''
+def generate_image_listing(metadata: LMetadata, items: list) -> str:
+    """
     similar to generate_listings, but handles images
-    '''
+    """
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     template = env.get_template(metadata.template_id)
 
-    ItemView = namedtuple('ItemView', 'title subtext rel_location')
+    ItemView = namedtuple("ItemView", "title subtext rel_location")
     listing = []
     for item in items:
-        subtext = f'{item.subtext}, {item.date}'
+        subtext = f"{item.subtext}, {item.date}"
         relloc = get_relpath(item.get_contentpath())
         listing.append(ItemView(item.title, subtext, relloc))
 
-    print(f'generate_image_listing {metadata.section} listing={listing}')
+    print(f"generate_image_listing {metadata.section} listing={listing}")
 
     if not metadata.subtext:
-        metadata.subtext = ''
+        metadata.subtext = ""
 
-    rendered = template.render(section_title=metadata.section_title,
-                               subtext=metadata.subtext,
-                               listing=listing)
+    rendered = template.render(
+        section_title=metadata.section_title, subtext=metadata.subtext, listing=listing
+    )
     if DEBUG:
-        output_filepath = os.path.join(OUTPUT_DIR, f'{metadata.section}-listing-generated.html')
+        output_filepath = os.path.join(
+            OUTPUT_DIR, f"{metadata.section}-listing-generated.html"
+        )
     else:
-        output_filepath = os.path.join(OUTPUT_DIR, f'{metadata.section}-listing.html')
-    print(f'writing listing {metadata.section} to {output_filepath} with {len(items)} items')
-    with open(output_filepath, 'w', encoding='utf-8') as fp:
+        output_filepath = os.path.join(OUTPUT_DIR, f"{metadata.section}-listing.html")
+    print(
+        f"writing listing {metadata.section} to {output_filepath} with {len(items)} items"
+    )
+    with open(output_filepath, "w", encoding="utf-8") as fp:
         fp.write(rendered)
     return output_filepath
 
 
-def generate_all_content(content_file: str):
-    '''
+def generate_all_content(content_file: str) -> dict:
+    """
     generate all content files
-    '''
+    """
     content = None
     with open(content_file) as fp:
         content = yaml.safe_load(fp)
@@ -304,11 +337,13 @@ def generate_all_content(content_file: str):
     return contentfiles
 
 
-def generate_listings(listings_file: str, content_file: str, img_content_file: str):
-    '''
+def generate_listings(
+    listings_file: str, content_file: str, img_content_file: str
+) -> dict:
+    """
     Generate all the listings file
     listings of images don't have children content files
-    '''
+    """
     content = None
     with open(content_file) as fp:
         content = yaml.safe_load(fp)
@@ -320,7 +355,7 @@ def generate_listings(listings_file: str, content_file: str, img_content_file: s
     with open(listings_file) as fp:
         listings = yaml.safe_load(fp)
 
-    results = {} # section -> filepath
+    results = {}  # section -> filepath
     for section, props in listings.items():
         if props is None:
             print(f'Skipping listing generation for section: "{section}"; empty props')
@@ -328,19 +363,26 @@ def generate_listings(listings_file: str, content_file: str, img_content_file: s
 
         lmetadata = LMetadata(section=section, **props)
         if lmetadata.image_content:
-            listing  = [ICMetadata(section=section, **item) for item in img_content.get(section, [])]
+            listing = [
+                ICMetadata(section=section, **item)
+                for item in img_content.get(section, [])
+            ]
             results[section] = generate_image_listing(lmetadata, listing)
         else:
-            listing = [CMetadata(section=section, **item) for item in content.get(section,[])]
+            listing = [
+                CMetadata(section=section, **item) for item in content.get(section, [])
+            ]
             results[section] = generate_content_listing(lmetadata, listing)
     return results
 
 
-def construct_trees(listing_fpaths: dict, content_fpaths: dict, index_fpath: str) -> tuple:
-    '''
+def construct_trees(
+    listing_fpaths: dict, content_fpaths: dict, index_fpath: str
+) -> tuple:
+    """
     Creates tree for each listing and content file.
     The return structure is same as the argument structure
-    '''
+    """
     # section name -> tree
     ltrees = {}
     # section name -> [tree]
@@ -369,8 +411,10 @@ def construct_trees(listing_fpaths: dict, content_fpaths: dict, index_fpath: str
     return ltrees, ctrees, itree
 
 
-def transform_html(listing_fpaths: dict, content_fpaths: dict, listing_trees: dict, content_trees: dict):
-    '''
+def transform_html(
+    listing_fpaths: dict, content_fpaths: dict, listing_trees: dict, content_trees: dict
+) -> None:
+    """
     express transformations on a DOM tree. Some transformations, e.g.
     add class "active" on a class are easier expressed on a tree, than as
     transformations applied on text.
@@ -379,7 +423,7 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict, listing_trees: di
         content_fpaths(dict): dict[section]-> [content_paths]
     Returns:
         dict: section -> tree
-    '''
+    """
 
     # handle listing files
     for section, filepath in listing_fpaths.items():
@@ -387,24 +431,24 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict, listing_trees: di
         tree = listing_trees[section]
 
         # set active on nav item
-        node = tree.find_node_with_id(f'nav-item-{section}')
-        node.add_class('active')
+        node = tree.find_node_with_id(f"nav-item-{section}")
+        node.add_class("active")
 
         # enrich see more link on listing page
         # by creating a link to the referenced content page
         # this assumes content_paths are in same order as on listing
         node = tree.find_node_with_id("listing-container")
-        for i, desc_node in enumerate(node.descendents(tag='a')):
+        for i, desc_node in enumerate(node.descendents(tag="a")):
             content_path = (content_fpaths.get(section, []))[i]
             link = get_relpath(content_path)
-            desc_node.set_attr('href', link)
+            desc_node.set_attr("href", link)
 
         # write output
-        outfilepath = decorate_path(filepath, 'mutated') if DEBUG else filepath
-        print(f'transforming {section} at {filepath} to {outfilepath}')
+        outfilepath = decorate_path(filepath, "mutated") if DEBUG else filepath
+        print(f"transforming {section} at {filepath} to {outfilepath}")
         # import pdb; pdb.set_trace()
         printer = treeparser.TreePrinter(tree.get_root(as_qmnode=False))
-        with open(outfilepath, 'w', encoding='utf-8') as fp:
+        with open(outfilepath, "w", encoding="utf-8") as fp:
             result = printer.mk_doc()
             fp.write(result)
 
@@ -414,41 +458,47 @@ def transform_html(listing_fpaths: dict, content_fpaths: dict, listing_trees: di
             # lookup tree
             tree = content_trees[section][idx]
 
-            #set navbar active
-            node = tree.find_node_with_id(f'nav-item-{section}')
-            node.add_class('active')
+            # set navbar active
+            node = tree.find_node_with_id(f"nav-item-{section}")
+            node.add_class("active")
 
             # set prev, next links
             # set prev
             if idx != 0:
-                prev_fpath = get_relpath(filepaths[idx-1])
+                prev_fpath = get_relpath(filepaths[idx - 1])
                 if DEBUG:
                     # if DEBUG, intermediate files are preserved
                     # temporarily to test on mutated file
                     # hence, set link to correct file
-                    prev_fpath = decorate_path(prev_fpath, 'mutated')
+                    prev_fpath = decorate_path(prev_fpath, "mutated")
 
-                tree.find_node_with_id('prev_link').set_attr('href', prev_fpath)
+                tree.find_node_with_id("prev_link").set_attr("href", prev_fpath)
             # set next
-            if idx != len(filepaths)-1:
-                next_fpath = get_relpath(filepaths[idx+1])
+            if idx != len(filepaths) - 1:
+                next_fpath = get_relpath(filepaths[idx + 1])
                 if DEBUG:
-                    next_fpath = decorate_path(next_fpath, 'mutated')
-                tree.find_node_with_id('next_link').set_attr('href', next_fpath)
+                    next_fpath = decorate_path(next_fpath, "mutated")
+                tree.find_node_with_id("next_link").set_attr("href", next_fpath)
 
             # get output filepath
-            outfilepath = decorate_path(filepath, 'mutated') if DEBUG else filepath
-            print(f'transforming {section} at {filepath} to {outfilepath}')
+            outfilepath = decorate_path(filepath, "mutated") if DEBUG else filepath
+            print(f"transforming {section} at {filepath} to {outfilepath}")
             # printer = parser.TreePrinter(tparser.root)
             printer = treeparser.TreePrinter(tree.get_root(as_qmnode=False))
-            with open(outfilepath, 'w', encoding='utf-8') as fp:
+            with open(outfilepath, "w", encoding="utf-8") as fp:
                 result = printer.mk_doc()
                 fp.write(result)
 
 
-def validations(listing_fpaths: dict, content_fpaths: dict, index_fpath: str,
-                listing_trees: dict, content_trees: dict, index_tree: dict):
-    '''
+def validations(
+    listing_fpaths: dict,
+    content_fpaths: dict,
+    index_fpath: str,
+    listing_trees: dict,
+    content_trees: dict,
+    index_tree: dict,
+):
+    """
     Apply validations to generated files.
 
     Currently applying:
@@ -458,65 +508,68 @@ def validations(listing_fpaths: dict, content_fpaths: dict, index_fpath: str,
     Thoughts:
     - perhaps have a diff mode
     - validate DOM tree- i.e. do all nodes closes
-    '''
-    print('Applying validations....')
+    """
+    print("Applying validations....")
 
     # validation: ensure files are not empty
-    vname = 'files not empty'
-    print(f'Applying validation: {vname}')
+    vname = "files not empty"
+    print(f"Applying validation: {vname}")
     # combine all files into one iterable
-    filepaths = itertools.chain(listing_fpaths.values(), flatten(content_fpaths.values()), [index_fpath])
+    filepaths = itertools.chain(
+        listing_fpaths.values(), flatten(content_fpaths.values()), [index_fpath]
+    )
     for filepath in filepaths:
         if os.path.getsize(filepath) == 0:
             raise ValidationError(f"file {filepath} is empty")
 
     # validation: index and generated should have identical navbar, except for active
-    vname = 'index matches generated'
-    print(f'Applying validation: {vname}')
+    vname = "index matches generated"
+    print(f"Applying validation: {vname}")
     # since navbar is generated from same template
     # need to only compare index with only one generated file
     # assuming there is one navbar
     # find navbar elements
-    idx_nav = index_tree.get_root().descendent(tag='nav')
-    gen_nav = next(iter(listing_trees.values())).get_root().descendent(tag='nav')
+    idx_nav = index_tree.get_root().descendent(tag="nav")
+    gen_nav = next(iter(listing_trees.values())).get_root().descendent(tag="nav")
     # get page name
     gen_page = next(iter(listing_fpaths.values()))
 
-    print(f'comparing {gen_page}, {index_fpath}')
+    print(f"comparing {gen_page}, {index_fpath}")
     # get diff
     navdiff = treediff.compare(idx_nav, gen_nav)
-    #treediff.pretty_print_diff(navdiff)
+    # treediff.pretty_print_diff(navdiff)
     for subdiff in navdiff:
         if isinstance(subdiff, treediff.UpdateAttrib):
             attrname = subdiff.path.tail().node
-            if attrname == 'class':
-                classdiff = set(subdiff.old_value.split()).symmetric_difference(set(subdiff.new_value.split()))
+            if attrname == "class":
+                classdiff = set(subdiff.old_value.split()).symmetric_difference(
+                    set(subdiff.new_value.split())
+                )
                 # check that the only class is `active`
-                if len(classdiff) != 1 or next(iter(classdiff)) != 'active':
-                    raise ValidationError(f'Unexpected change {subdiff}')
+                if len(classdiff) != 1 or next(iter(classdiff)) != "active":
+                    raise ValidationError(f"Unexpected change {subdiff}")
             else:
-                raise ValidationError(f'Unexpected change {subdiff}')
+                raise ValidationError(f"Unexpected change {subdiff}")
 
         else:
             # this indicates something isn't as expected
-            raise ValidationError(f'Unexpected change {subdiff}')
-
+            raise ValidationError(f"Unexpected change {subdiff}")
 
 
 def driver():
-    '''
+    """
     generate pages
-    '''
+    """
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    content_file = os.path.join(dir_path, './content.yaml')
-    image_content_file = os.path.join(dir_path, './image_content.yaml')
-    listings_file = os.path.join(dir_path, './sections.yaml')
+    content_file = os.path.join(dir_path, "./content.yaml")
+    image_content_file = os.path.join(dir_path, "./image_content.yaml")
+    listings_file = os.path.join(dir_path, "./sections.yaml")
 
     # section -> filepath
     lfiles = generate_listings(listings_file, content_file, image_content_file)
     # section -> [filepaths]
     cfiles = generate_all_content(content_file)
-    #print_contents(content_file)
+    # print_contents(content_file)
 
     # construct trees
     ltrees, ctrees, itree = construct_trees(lfiles, cfiles, INDEX_FILE)
@@ -526,9 +579,8 @@ def driver():
     validations(lfiles, cfiles, INDEX_FILE, ltrees, ctrees, itree)
 
 
-
 if __name__ == "__main__":
     # determines whether intermediate files are written out separately
     DEBUG = False
-    print(f'DEBUG is {DEBUG}')
+    print(f"DEBUG is {DEBUG}")
     driver()
