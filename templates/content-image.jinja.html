@@ -1,37 +1,37 @@
 {% extends "head.jinja.html" %}
 {% block content %}
 
-	<div class="container mb-4" >
-		<div class="row">
-			<div class="col col-lg-8 col-xl-8 mt-4 mx-auto">
-				<h1 class="display-4">{{title}}</h1>
-				<div class="row justify-content-end">
-					<div>
-						<p class="col small">{{date}}</p>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<div class="row">
-			<div class="col col-lg-8 col-xl-8 mx-4 mx-auto">
-					<div>
-						<img src="{{image_location}}" class="img-thumbnail" alt="abstract-image">
-					</div>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col col-lg-8 col-xl-8 mb-4 mx-auto mx-4 mb-4 mx-auto">
-				<div class="small">
-					{{image_attribution}}
-				</div>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col col-lg-8 col-xl-8 mx-4 mx-auto">
-				{{body}}
-			</div>
-		</div>
-	</div>
+    <div class="container mb-4" >
+        <div class="row">
+            <div class="col col-lg-8 col-xl-8 mt-4 mx-auto">
+                <h1 class="display-4">{{title}}</h1>
+                <div class="row justify-content-end">
+                    <div>
+                        <p class="col small">{{date}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col col-lg-8 col-xl-8 mx-4 mx-auto">
+                    <div>
+                        <img src="{{image_location}}" class="img-thumbnail" alt="abstract-image">
+                    </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-lg-8 col-xl-8 mb-4 mx-auto mx-4 mb-4 mx-auto">
+                <div class="small">
+                    {{image_attribution}}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-lg-8 col-xl-8 mx-4 mx-auto">
+                {{body}}
+            </div>
+        </div>
+    </div>
 
 {% endblock %}

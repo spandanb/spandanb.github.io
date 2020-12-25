@@ -1,34 +1,34 @@
 {% extends "head.jinja.html" %}
 {% block content %}
 
-	<!-- TODO: this uses custom CSS for jumbotron image
-	to make this image customizable; will have to generate the CSS
-	or inline it into the html
-	--> 
-	<div class="jumbotron poetry-jumbotron">
+    <!-- TODO: this uses custom CSS for jumbotron image
+    to make this image customizable; will have to generate the CSS
+    or inline it into the html
+    -->
+    <div class="jumbotron poetry-jumbotron">
         <div class="container">
-			<div class="card poetry-jumbotron-card">
-				<div class="card-body poetry-jumbotron-card-body">
-					<h1 class="card-title display-2">{{section_title}}</h1>
-					<p class="card-text">{{subtext}}</p>
-				</div>
-			</div>
+            <div class="card poetry-jumbotron-card">
+                <div class="card-body poetry-jumbotron-card-body">
+                    <h1 class="card-title display-2">{{section_title}}</h1>
+                    <p class="card-text">{{subtext}}</p>
+                </div>
+            </div>
         </div>
     </div> <!--.jumbotron -->
-	
-	<div id="listing-container" class="container" >
-		{% for item in listings %}
-			<div class="row mb-5">
-				<div class="col col-md">				
-					<div class="card">
-						<div class="card-body">
-							<h1 class="card-title display-4">{{item.title}}</h1>
-							<p class="card-text">{{item.teaser}}<a href="#">Read more</a> </p>
-						</div>
-					</div>
-				</div>
-			</div>
-		{% endfor %}
-	</div>
-		
+
+    <div id="listing-container" class="container" >
+        {% for item in listings %}
+            <div class="row mb-5">
+                <div class="col col-md">
+                    <div class="card">
+                        <div class="card-body">
+                            <h1 class="card-title display-4">{{item.title}}</h1>
+                            <p class="card-text">{{item.teaser}}<a href="#">Read more</a> </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
 {% endblock %}

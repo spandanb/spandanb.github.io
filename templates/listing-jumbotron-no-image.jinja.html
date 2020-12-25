@@ -1,26 +1,26 @@
 {% extends "head.jinja.html" %}
 {% block content %}
 
-	<div class="jumbotron">
+    <div class="jumbotron">
         <div class="container">
-			<h1 class="card-title display-2">{{section_title}}</h1>
-			<p>{{subtext}}</p>		
+            <h1 class="card-title display-2">{{section_title}}</h1>
+            <p>{{subtext}}</p>
         </div>
     </div> <!--.jumbotron -->
-	
-	<div id="listing-container" class="container" >
-		{% for item in listings %}
-			<div class="row mb-5">
-				<div class="col col-md">				
-					<div class="card">
-						<div class="card-body">
-							<h1 class="card-title display-4">{{item.title}}</h1>
-							<p class="card-text">{{item.teaser}}<a href="#">Read more</a> </p>
-						</div>
-					</div>
-				</div>
-			</div>
-		{% endfor %}
-	</div>
-		
+
+    <div id="listing-container" class="container" >
+        {% for item in listings %}
+            <div class="row mb-5">
+                <div class="col col-md">
+                    <div class="card">
+                        <div class="card-body">
+                            <h1 class="card-title display-4">{{item.title}}</h1>
+                            <p class="card-text">{{item.teaser}}<a href="#">Read more</a> </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
 {% endblock %}
