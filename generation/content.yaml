@@ -26,8 +26,22 @@ essays:
       image_attribution: Image by <a href="https://pixabay.com/users/romanticfatman-5414736/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2500919">Lerkrat Tangsri</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2500919">Pixabay</a>
 
 poetry:
+    - title: Absurd Poetry
+      date: 2020-12-25
+      content_id: absurd-poetry.txt
+      template_id: content-image.jinja.html
+      image_id: fractal.jpg
+      image_attribution: Image by <a href="https://pixabay.com/users/thedigitalartist-202249/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1091171">Pete Linforth</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1091171">Pixabay</a>
+
+    - title: I Wore The Wrong Socks
+      date: 2020-12-25
+      content_id: wrong-socks.txt
+      template_id: content-image.jinja.html
+      image_id: beaded-pencil.jpg
+      image_attribution: Image by <a href="https://pixabay.com/users/myriams-fotos-1627417/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2137080">Myriams-Fotos</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2137080">Pixabay</a>
+
     - title: Wisdom and Sunshine
-      date: 2020-01-01
+      date: 2020-10-16
       content_id: wisdom-and-sunshine.txt
       template_id: content-image.jinja.html
       # template_location: item-template-jumbotron.html
