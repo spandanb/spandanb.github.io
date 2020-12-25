@@ -1,13 +1,13 @@
-art:    
+art:
     - image_id: then-there-were-four.png
       title: Then There Were Four
-      subtext: paper 
+      subtext: paper
       date: 2018
-    
+
     - image_id: the-carnival.png
       title: The Carnival
       # subtext could be the title materials, location, etc
-      subtext: paper 
+      subtext: paper
       date: 2018
 
     - image_id: you-and-me.png
@@ -15,13 +15,52 @@ art:
       # TODO: to make this text linkable,
       # the easiest way is to make the text interpretable
       # e.g. markdown mechanism for creating a [text](link_address)
-      subtext: Paper, inspired by the work of Hari and Deepti 
+      subtext: Paper, inspired by the work of Hari and Deepti
       date: 2018
+
+    - image_id: discernment.jpg
+      title: Discernment
+      subtext: Discernment will lead to different choices
+      date: 2020-12-24
+
+    - image_id: sapiens1.jpg
+      title: Becoming Sapiens
+      subtext: This is a work inspired by Yuval Noah Harari's Sapiens. This depicts different phases of humanity on cut paper on black cube.
+      date: 2019-1
+
+    - image_id: pane1-sprouting.jpg
+      title: Sprouting/Birthing
+      subtext: The sprouting/birthing of humanity.
+      date: 2019-1
+
+    - image_id: pane2-unknown.jpg
+      title: Face to face with the great unknown
+      subtext: The sprouting/birthing of humanity.
+      date: 2019-1
+
+    - image_id: pane3-homo-erectus.jpg
+      title: Getting Erect.
+      subtext: Straightening the gait
+      date: 2019-1
+
+    - image_id: pane4-gift.jpg
+      title: The gift of fire
+      subtext:
+      date: 2019-1
+
+    - image_id: pane5-shaman.jpg
+      title: Dancing and agriculture
+      subtext: Humaity is developing complex social structures and technical skills
+      date: 2019-1
+
+    - image_id: pane6-civilization.jpg
+      title: Civilization Emerges
+      subtext: This is now.
+      date: 2019-1
+
 
 photography:
     - image_id: magpie.jpg
       title: Magpie in Banff
       subtext: Banff
       date: 2020
-      
-      
