@@ -1,0 +1,27 @@
+﻿The peculiar similarities between effective software engineering and spirituality:
+1. naming it is a big part of the task
+2. with enough time, I can do it alone
+
+
+Let’s consider the two in detail.
+
+
+First, naming it is a big part of the task or the thing at hand. And in my personal journey, this wasn’t clear until somewhat into the weeds. 
+
+
+With software engineering, I used to think of engineers as someone who used to write code. But that was a limited view. In the grand scheme of things, the engineer translates and manages complexity. And in this view, understanding what the problem is as important as the solution- if one exists.
+
+
+Consider the parallel in spirituality. I stumbled upon the spirituality, by way of looking for a way to reduce suffering. But the spiritual journey is one of refining and exploring different questions. And so the question of reducing suffering evolved into a question of understanding my relationship to reality.
+
+
+The second similarity between two is that given enough time, one will make progress, and can culminate in a terminal point if one exists. For instance in SE, as long as I have the source code, a machine, and a compiler, (and enough time) I can fully understand the code. In some way, this is always the case- an adventurous and brave enough mind will always find the solution. But a biologist just does not have the same technological leverage - to fully understand the life before it- even if given enough time[1]. 
+
+
+This is similar in spirituality, where one must walk it alone. Teachers, and texts can show us the way, but no one else can walk the path for us.
+
+
+
+
+________________
+[1] of course, what I’m saying makes no sense
