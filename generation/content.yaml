@@ -73,6 +73,11 @@ poetry:
 
 
 random-thoughts:
+    - title: Awareness and The Ego
+      date: 2020-12-28
+      content_id: awareness-and-ego.txt
+      template_id: content-no-image.jinja.html
+
     - title: Spirituality and Software Engineering
       date: 2020-12-25
       content_id: spirituality-software-eng.txt
