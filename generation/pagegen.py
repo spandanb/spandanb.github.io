@@ -1,6 +1,5 @@
 """
-use jinja to generate site pages
-
+static website generation pipeline
 """
 import os
 import yaml
@@ -9,14 +8,16 @@ import itertools
 from collections import namedtuple, defaultdict
 from jinja2 import Environment, FileSystemLoader
 
-from typing import List, Union
+from typing import List, Union, Dict
 from collections.abc import Iterable
 
+# local imports
 import textparser
 import treeparser
 import treediff
 
 ###  Config
+## Config source and output of generation
 SELF_PATH = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(SELF_PATH, r"..\templates")
 OUTPUT_DIR = os.path.join(SELF_PATH, r"..")
@@ -25,8 +26,14 @@ IMG_DIR = os.path.join(SELF_PATH, r"..\img")
 # IMG_CONTENT_DIR is where images produced by me are stored
 IMG_CONTENT_DIR = os.path.join(SELF_PATH, r"..\pics")
 INDEX_FILE = os.path.join(SELF_PATH, r"..\index.html")
-# determines whether intermediate output files are stored
-DEBUG = False
+
+## Config Generation pipeline
+# whether intermediate files are stored; for normal run set `True`
+INTERMEDIATE_FILES = False
+# whether to apply validations
+APPLY_VALIDATIONS = True
+
+## Config controlling generated page styling
 # on listing pages, I show the first line of content
 # truncate the line if longer limit
 PREVIEW_LINE_LIMIT = 135
@@ -56,6 +63,14 @@ apply tranformations on a tree. Transforming a tree is easier
 because, one can specify which node to find, and transform.
 I've opted for this when possible. But this does mean the tree
 has to be searchable and updatable.
+
+- settable filename:
+The way the filename is generated, it can be overriden through
+an external actor; this makes the code non-functional, since
+the it can have non-deterministic outcome. To make the code functionally cleaner
+I would have to re-write the generation function to have side effects, i.e.
+write to file, and that would ruin the original design goal of code simplicity.
+
 """
 
 ### Data Structs/Classes
@@ -90,6 +105,19 @@ class CMetadata:
     def get_contentpath(self):
         return os.path.join(CONTENT_DIR, self.section, self.content_id)
 
+    @classmethod
+    def from_file(cls, filepath: str) -> dict:
+        """
+        read content file and returns dict: section -> [files]
+        """
+        content = load_yaml(filepath)
+        contentfiles = defaultdict(list)
+        for section, items in content.items():
+            for item in items:
+                metadata = cls(section=section, **item)
+                contentfiles[section].append(metadata)
+        return contentfiles
+
 
 class ICMetadata:
     """
@@ -111,9 +139,24 @@ class ICMetadata:
     def get_contentpath(self):
         return os.path.join(IMG_CONTENT_DIR, self.image_id)
 
+    @classmethod
+    def from_file(cls, filepath: str) -> dict:
+        """
+        read yaml file and return data structure mimicking structure of file
+        i.e. section -> LMetadata
+        """
+        content = load_yaml(filepath)
+        contentfiles = defaultdict(list)
+        for section, items in content.items():
+            for item in items:
+                metadata = cls(section=section, **item)
+                contentfiles[section].append(metadata)
+        return contentfiles
+
 
 class LMetadata:
     """
+    TODO: rename S(ection)Metadata
     listing metadata
     """
 
@@ -136,6 +179,21 @@ class LMetadata:
     def __repr__(self):
         return f"LM[{self.__dict__}]"
 
+    @classmethod
+    def from_file(cls, filepath: str) -> dict:
+        """
+        read yaml file and return data structure mimicking structure of file
+        i.e. section -> LMetadata
+        """
+        listings = load_yaml(filepath)
+        result = {}
+        for section, props in listings.items():
+            if props is None:  # empty section
+                continue
+            result[section] = cls(section=section, **props)
+
+        return result
+
 
 class ValidationError(Exception):
     """
@@ -144,6 +202,16 @@ class ValidationError(Exception):
 
 
 ### Utils
+
+
+def load_yaml(filepath: str):
+    """
+    read yaml file
+    """
+    content = None
+    with open(filepath) as fp:
+        content = yaml.safe_load(fp)
+    return content
 
 
 def get_relpath(fpath: str, refpath=OUTPUT_DIR) -> str:
@@ -202,8 +270,68 @@ def get_lines(content_path: str) -> List:
 
 ### Content Generation
 
+class FileManager:
+    """
+    file manager used to access files and get prev/next links
+    this is initialized with content yaml maps. this makes
+    the concerns somewhat mixed; but this is necessary given that I
+    want to keep functions (individual components responsible for a part of the
+    pipeline) capable of reading/generating/modifying/writing independently of
+    other components. So you need this object with some state
+    """
 
-def generate_content(metadata: CMetadata) -> str:
+    def __init__(
+        self, content: dict, output_dir=OUTPUT_DIR
+    ):
+        """"""
+        # content map: section -> CMetadata
+        self.content = content
+        self.output_dir = output_dir
+
+        self.decoration = ""
+
+    def set_decoration(self, decoration: str):
+        """
+        This makes it more like FSM; this sets the mode of operation
+        this also makes the path generation stateful
+        """
+        self.decoration = decoration
+
+    def get_listing_filepath(self, section: str):
+        decoration = f"-{self.decoration}" if self.decoration else ""
+        return os.path.join(self.output_dir, f"{section}-listing{decoration}.html")
+
+    def content_filepath_from_metadata(self, metadata: CMetadata) -> str:
+        """
+        generate filepath from metadata object
+        """
+        # content_id is: <foo>.txt
+        baseid, _ = os.path.splitext(metadata.content_id)
+        decoration = f"-{self.decoration}" if self.decoration else ""
+        return os.path.join(self.output_dir, f"{baseid}{decoration}.html")
+
+    def get_content_filepath(self, section, index) -> str:
+        """
+        get current content path from `section` and `index`
+        """
+        return self.content_filepath_from_metadata(self.content[section][index])
+
+    def get_prev_content_path(self, section, index) -> str:
+        """
+        get the previous content path
+        """
+        if index > 0:
+            return self.get_content_filepath(section, index - 1)
+        return "#"
+
+    def get_next_content_path(self, section, index) -> str:
+        items = self.content[section]
+        if index < len(items) - 1:
+            return self.get_content_filepath(section, index + 1)
+        return "#"
+
+
+def generate_content(metadata: CMetadata, file_manager: FileManager) -> str:
     """
     generate content for file specified in `metadata`
     and write output to output file. Returns output-filepath
@@ -230,20 +358,16 @@ def generate_content(metadata: CMetadata) -> str:
         is_content_page=True,
     )
 
-    # content_id is: <foo>.txt
-    baseid, _ = os.path.splitext(metadata.content_id)
-    # write output
-    if DEBUG:
-        output_filepath = os.path.join(OUTPUT_DIR, f"{baseid}-generated.html")
-    else:
-        output_filepath = os.path.join(OUTPUT_DIR, f"{baseid}.html")
-    print(f"writing {metadata.section} {baseid} to {output_filepath}")
+    output_filepath = file_manager.content_filepath_from_metadata(metadata)
+    print(f"writing {metadata.section} {metadata.content_id} to {output_filepath}")
     with open(output_filepath, "w", encoding="utf-8") as fp:
         fp.write(rendered)
     return output_filepath
 
 
-def generate_content_listing(metadata: LMetadata, items: list) -> str:
+def generate_content_listing(
+    metadata: LMetadata, items: list, file_manager: FileManager
+) -> str:
     """
     generate a specific listing page and return output filepath
     """
@@ -271,21 +395,15 @@ def generate_content_listing(metadata: LMetadata, items: list) -> str:
         subtext=metadata.subtext,
         listings=listings,
     )
-    if DEBUG:
-        output_filepath = os.path.join(
-            OUTPUT_DIR, f"{metadata.section}-listing-generated.html"
-        )
-    else:
-        output_filepath = os.path.join(OUTPUT_DIR, f"{metadata.section}-listing.html")
-    print(
-        f"writing listing {metadata.section} to {output_filepath} with {len(items)} items"
-    )
+    output_filepath = file_manager.get_listing_filepath(metadata.section)
     with open(output_filepath, "w", encoding="utf-8") as fp:
         fp.write(rendered)
     return output_filepath
 
 
-def generate_image_listing(metadata: LMetadata, items: list) -> str:
+def generate_image_listing(
+    metadata: LMetadata, items: list, file_manager: FileManager
+) -> str:
     """
     similar to generate_listings, but handles images
     """
@@ -307,75 +425,54 @@ def generate_image_listing(metadata: LMetadata, items: list) -> str:
     rendered = template.render(
         section_title=metadata.section_title, subtext=metadata.subtext, listing=listing
     )
-    if DEBUG:
-        output_filepath = os.path.join(
-            OUTPUT_DIR, f"{metadata.section}-listing-generated.html"
-        )
-    else:
-        output_filepath = os.path.join(OUTPUT_DIR, f"{metadata.section}-listing.html")
-    print(
-        f"writing listing {metadata.section} to {output_filepath} with {len(items)} items"
-    )
+    output_filepath = file_manager.get_listing_filepath(metadata.section)
     with open(output_filepath, "w", encoding="utf-8") as fp:
         fp.write(rendered)
     return output_filepath
 
 
-def generate_all_content(content_file: str) -> dict:
+def generate_all_content(content_file: str, file_manager: FileManager) -> dict:
     """
     generate all content files
     """
-    content = None
-    with open(content_file) as fp:
-        content = yaml.safe_load(fp)
     contentfiles = defaultdict(list)
+    content = CMetadata.from_file(content_file)
     for section, items in content.items():
-        # print(f'Processing section: {section}')
-        for item in items:
-            metadata = CMetadata(section=section, **item)
-            generated = generate_content(metadata)
+        for metadata in items:
+            generated = generate_content(metadata, file_manager)
             contentfiles[section].append(generated)
 
     return contentfiles
 
 
 def generate_listings(
-    listings_file: str, content_file: str, img_content_file: str
+    listings_file: str,
+    content_file: str,
+    img_content_file: str,
+    file_manager: FileManager,
 ) -> dict:
     """
-    Generate all the listings file
-    listings of images don't have children content files
+    generate all listings
+    NB: listing of images don't have children content files
     """
-    content = None
-    with open(content_file) as fp:
-        content = yaml.safe_load(fp)
-    img_content = None
-    with open(img_content_file) as fp:
-        img_content = yaml.safe_load(fp)
-
-    listings = None
-    with open(listings_file) as fp:
-        listings = yaml.safe_load(fp)
+    listings = LMetadata.from_file(listings_file)
+    content = CMetadata.from_file(content_file)
+    img_content = ICMetadata.from_file(img_content_file)
 
     results = {}  # section -> filepath
-    for section, props in listings.items():
-        if props is None:
-            print(f'Skipping listing generation for section: "{section}"; empty props')
-            continue
+    for section, lmetadata in listings.items():
 
-        lmetadata = LMetadata(section=section, **props)
-        listing: List[Union[ICMetadata, CMetadata]] = []
         if lmetadata.image_content:
-            listing = [
-                ICMetadata(section=section, **item)
-                for item in img_content.get(section, [])
-            ]
-            results[section] = generate_image_listing(lmetadata, listing)
+            img_listing = img_content.get(section, [])
+            results[section] = generate_image_listing(
+                lmetadata, img_listing, file_manager
+            )
         else:
-            listing = [
-                CMetadata(section=section, **item) for item in content.get(section, [])
-            ]
-            results[section] = generate_content_listing(lmetadata, listing)
+            content_listing = content.get(section, [])
+            results[section] = generate_content_listing(
+                lmetadata, content_listing, file_manager
+            )
+
     return results
 
 
@@ -415,8 +512,11 @@ def construct_trees(
 
 
 def transform_html(
-    listing_fpaths: dict, content_fpaths: dict, listing_trees: dict, content_trees: dict
-) -> None:
+    content_fpaths: dict,
+    listing_trees: dict,
+    content_trees: dict,
+    file_manager: FileManager,
+):
     """
     express transformations on a DOM tree. Some transformations, e.g.
     add class "active" on a class are easier expressed on a tree, than as
@@ -424,17 +524,11 @@ def transform_html(
     Arguments:
         listing_fpaths(dict): dict[section]-> listing_path
         content_fpaths(dict): dict[section]-> [content_paths]
-    Returns:
-        dict: section -> tree
     """
-
     printer = treeparser.TreePrinter()
 
     # handle listing files
-    for section, filepath in listing_fpaths.items():
-        # lookup tree
-        tree = listing_trees[section]
-
+    for section, tree in listing_trees.items():
         # set active on nav item
         node = tree.find_node_with_id(f"nav-item-{section}")
         node.add_class("active")
@@ -449,15 +543,15 @@ def transform_html(
             desc_node.set_attr("href", link)
 
         # write output
-        outfilepath = decorate_path(filepath, "mutated") if DEBUG else filepath
-        print(f"transforming {section} at {filepath} to {outfilepath}")
+        outfilepath = file_manager.get_listing_filepath(section)
+        # print(f"transforming {section} at {filepath} to {outfilepath}")
         with open(outfilepath, "w", encoding="utf-8") as fp:
             result = printer.mk_doc(tree.get_root(as_qmnode=False))
             fp.write(result)
 
     # handle content files
-    for section, filepaths in content_fpaths.items():
-        for idx, filepath in enumerate(filepaths):
+    for section, trees in content_trees.items():
+        for idx, tree in enumerate(trees):
             # lookup tree
             tree = content_trees[section][idx]
 
@@ -468,24 +562,20 @@ def transform_html(
             # set prev, next links
             # set prev
             if idx != 0:
-                prev_fpath = get_relpath(filepaths[idx - 1])
-                if DEBUG:
-                    # if DEBUG, intermediate files are preserved
-                    # temporarily to test on mutated file
-                    # hence, set link to correct file
-                    prev_fpath = decorate_path(prev_fpath, "mutated")
-
+                prev_fpath = get_relpath(
+                    file_manager.get_prev_content_path(section, idx)
+                )
                 tree.find_node_with_id("prev_link").set_attr("href", prev_fpath)
             # set next
-            if idx != len(filepaths) - 1:
-                next_fpath = get_relpath(filepaths[idx + 1])
-                if DEBUG:
-                    next_fpath = decorate_path(next_fpath, "mutated")
+            if idx != len(trees) - 1:
+                next_fpath = get_relpath(
+                    file_manager.get_next_content_path(section, idx)
+                )
                 tree.find_node_with_id("next_link").set_attr("href", next_fpath)
 
             # get output filepath
-            outfilepath = decorate_path(filepath, "mutated") if DEBUG else filepath
-            print(f"transforming {section} at {filepath} to {outfilepath}")
+            outfilepath = file_manager.get_content_filepath(section, idx)
+            print(f"transforming {section} to {outfilepath}")
             with open(outfilepath, "w", encoding="utf-8") as fp:
                 result = printer.mk_doc(tree.get_root(as_qmnode=False))
                 fp.write(result)
@@ -505,12 +595,14 @@ def validations(
     Currently applying:
     1) ensure files aren't empty
     2) index file and a generated file navbar only differ in 'active' class
+    3) validate all generated files have a unique filename
 
     Thoughts:
     - perhaps have a diff mode
     - validate DOM tree- i.e. do all nodes closes
+        -- hmm, this should be something exposed by treeparser
+
     """
-    print("Applying validations....")
 
     # validation: ensure files are not empty
     vname = "files not empty"
@@ -556,32 +648,66 @@ def validations(
             # this indicates something isn't as expected
             raise ValidationError(f"Unexpected change {subdiff}")
 
+    # validation: no files being clobbered because of non-unique file names
+    vname = "file names are unique"
+    print(f"Applying validation: {vname}")
+    counter: Dict[str, int] = defaultdict(int)
+    for section, filepaths in content_fpaths.items():
+        for filepath in filepaths:
+            counter[filepath] += 1
+            if counter[filepath] > 1:
+                raise ValidationError(f"Non-unique filename '{filepath}'")
+
 
 def driver():
     """
     generate pages
+    handles config for:
+        - whether to write intermediate files by manipulating output filename
+        - whether to apply validations
     """
     dir_path = os.path.dirname(os.path.realpath(__file__))
+    listings_file = os.path.join(dir_path, "./sections.yaml")
     content_file = os.path.join(dir_path, "./content.yaml")
     image_content_file = os.path.join(dir_path, "./image_content.yaml")
-    listings_file = os.path.join(dir_path, "./sections.yaml")
 
-    # section -> filepath
-    lfiles = generate_listings(listings_file, content_file, image_content_file)
-    # section -> [filepaths]
-    cfiles = generate_all_content(content_file)
-    # print_contents(content_file)
+    listings = LMetadata.from_file(listings_file)
+    content = CMetadata.from_file(content_file)
+    image_content = ICMetadata.from_file(image_content_file)
+
+    # construct file manager, which determines
+    # the filenames used; this is intended to facilitate debugging
+    # see design-decisions (settable filename)
+    file_manager = FileManager(content)
+
+    if INTERMEDIATE_FILES:
+        file_manager.set_decoration("generated")
+
+    print(f"{os.linesep}Generating listings...")
+    # generate listings
+    lfiles = generate_listings(
+        listings_file, content_file, image_content_file, file_manager
+    )  # section -> filepath
+
+    print(f"{os.linesep}Generating content...")
+    # generate content
+    cfiles = generate_all_content(content_file, file_manager)  # section -> [filepaths]
+
+    if INTERMEDIATE_FILES:
+        file_manager.set_decoration("generated-mutated")
 
     # construct trees
     ltrees, ctrees, itree = construct_trees(lfiles, cfiles, INDEX_FILE)
-    # apply transforms
-    transform_html(lfiles, cfiles, ltrees, ctrees)
-    # apply validations
-    validations(lfiles, cfiles, INDEX_FILE, ltrees, ctrees, itree)
+
+    print(f"{os.linesep}Applying transformations...")
+    # apply transform
+    transform_html(cfiles, trees, ctrees, file_manager)
+
+    if APPLY_VALIDATIONS:
+        # apply validations
+        print(f"{os.linesep}Applying validations...")
+        validations(lfiles, cfiles, INDEX_FILE, ltrees, ctrees, itree)
 
 
 if __name__ == "__main__":
-    # determines whether intermediate files are written out separately
-    DEBUG = False
-    print(f"DEBUG is {DEBUG}")
     driver()
