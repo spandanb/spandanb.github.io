@@ -3,18 +3,16 @@ static website generation pipeline
 """
 import os
 import yaml
-import itertools
 
 from collections import namedtuple, defaultdict
 from jinja2 import Environment, FileSystemLoader
 
-from typing import List, Union, Dict
-from collections.abc import Iterable
+from typing import List
 
 # local imports
 import textparser
 import treeparser
-import treediff
+import validations
 
 ###  Config
 ## Config source and output of generation
@@ -30,8 +28,6 @@ INDEX_FILE = os.path.join(SELF_PATH, r"..\index.html")
 ## Config Generation pipeline
 # whether intermediate files are stored; for normal run set `True`
 INTERMEDIATE_FILES = False
-# whether to apply validations
-APPLY_VALIDATIONS = True
 
 ## Config controlling generated page styling
 # on listing pages, I show the first line of content
@@ -195,12 +191,6 @@ class LMetadata:
         return result
 
 
-class ValidationError(Exception):
-    """
-    Generic exception raised on validation failure
-    """
-
-
 ### Utils
 
 
@@ -219,13 +209,6 @@ def get_relpath(fpath: str, refpath=OUTPUT_DIR) -> str:
     get `fpath` relative to `refpath`
     """
     return os.path.relpath(fpath, refpath)
-
-
-def flatten(iterable: Iterable) -> List:
-    """
-    flatten a 2-d iterable object
-    """
-    return [subitem for item in iterable for subitem in item]
 
 
 def decorate_path(filepath: str, dec: str) -> str:
@@ -410,20 +393,19 @@ def generate_image_listing(
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     template = env.get_template(metadata.template_id)
 
-    ItemView = namedtuple("ItemView", "title subtext rel_location")
+    ItemView = namedtuple("ItemView", "title subtext rel_location date")
     listing = []
     for item in items:
-        subtext = f"{item.subtext}, {item.date}"
+        subtext = f"{item.subtext}" if item.subtext else ""
         relloc = get_relpath(item.get_contentpath())
-        listing.append(ItemView(item.title, subtext, relloc))
+        date = item.date
+        listing.append(ItemView(item.title, subtext, relloc, date))
 
     print(f"generate_image_listing {metadata.section} listing={listing}")
 
-    if not metadata.subtext:
-        metadata.subtext = ""
-
+    section_subtext = metadata.subtext or ""
     rendered = template.render(
-        section_title=metadata.section_title, subtext=metadata.subtext, listing=listing
+        section_title=metadata.section_title, subtext=section_subtext, listing=listing
     )
     output_filepath = file_manager.get_listing_filepath(metadata.section)
     with open(output_filepath, "w", encoding="utf-8") as fp:
@@ -581,99 +563,19 @@ def transform_html(
                 fp.write(result)
 
 
-def validations(
-    listing_fpaths: dict,
-    content_fpaths: dict,
-    index_fpath: str,
-    listing_trees: dict,
-    content_trees: dict,
-    index_tree: treeparser.Tree,
-):
-    """
-    Apply validations to generated files.
-
-    Currently applying:
-    1) ensure files aren't empty
-    2) index file and a generated file navbar only differ in 'active' class
-    3) validate all generated files have a unique filename
-
-    Thoughts:
-    - perhaps have a diff mode
-    - validate DOM tree- i.e. do all nodes closes
-        -- hmm, this should be something exposed by treeparser
-
-    """
-
-    # validation: ensure files are not empty
-    vname = "files not empty"
-    print(f"Applying validation: {vname}")
-    # combine all files into one iterable
-    filepaths = itertools.chain(
-        listing_fpaths.values(), flatten(content_fpaths.values()), [index_fpath]
-    )
-    for filepath in filepaths:
-        if os.path.getsize(filepath) == 0:
-            raise ValidationError(f"file {filepath} is empty")
-
-    # validation: index and generated should have identical navbar, except for active
-    vname = "index matches generated"
-    print(f"Applying validation: {vname}")
-    # since navbar is generated from same template
-    # need to only compare index with only one generated file
-    # assuming there is one navbar
-    # find navbar elements
-    idx_nav = index_tree.get_root().descendent(tag="nav")
-    gen_nav = next(iter(listing_trees.values())).get_root().descendent(tag="nav")
-    # get page name
-    gen_page = next(iter(listing_fpaths.values()))
-
-    print(f"comparing {gen_page}, {index_fpath}")
-    # get diff
-    navdiff = treediff.compare(idx_nav, gen_nav)
-    # treediff.pretty_print_diff(navdiff)
-    for subdiff in navdiff:
-        if isinstance(subdiff, treediff.UpdateAttrib):
-            attrname = subdiff.path.tail().node
-            if attrname == "class":
-                classdiff = set(subdiff.old_value.split()).symmetric_difference(
-                    set(subdiff.new_value.split())
-                )
-                # check that the only class is `active`
-                if len(classdiff) != 1 or next(iter(classdiff)) != "active":
-                    raise ValidationError(f"Unexpected change {subdiff}")
-            else:
-                raise ValidationError(f"Unexpected change {subdiff}")
-
-        else:
-            # this indicates something isn't as expected
-            raise ValidationError(f"Unexpected change {subdiff}")
-
-    # validation: no files being clobbered because of non-unique file names
-    vname = "file names are unique"
-    print(f"Applying validation: {vname}")
-    counter: Dict[str, int] = defaultdict(int)
-    for section, filepaths in content_fpaths.items():
-        for filepath in filepaths:
-            counter[filepath] += 1
-            if counter[filepath] > 1:
-                raise ValidationError(f"Non-unique filename '{filepath}'")
-
-
 def driver():
     """
     generate pages
     handles config for:
         - whether to write intermediate files by manipulating output filename
-        - whether to apply validations
     """
     dir_path = os.path.dirname(os.path.realpath(__file__))
     listings_file = os.path.join(dir_path, "./sections.yaml")
     content_file = os.path.join(dir_path, "./content.yaml")
     image_content_file = os.path.join(dir_path, "./image_content.yaml")
 
-    listings = LMetadata.from_file(listings_file)
+    # construct data maps
     content = CMetadata.from_file(content_file)
-    image_content = ICMetadata.from_file(image_content_file)
 
     # construct file manager, which determines
     # the filenames used; this is intended to facilitate debugging
@@ -701,12 +603,11 @@ def driver():
 
     print(f"{os.linesep}Applying transformations...")
     # apply transform
-    transform_html(cfiles, trees, ctrees, file_manager)
+    transform_html(cfiles, ltrees, ctrees, file_manager)
 
-    if APPLY_VALIDATIONS:
-        # apply validations
-        print(f"{os.linesep}Applying validations...")
-        validations(lfiles, cfiles, INDEX_FILE, ltrees, ctrees, itree)
+    # apply validations
+    print(f"{os.linesep}Applying validations...")
+    validations.run_validations(lfiles, cfiles, INDEX_FILE, ltrees, ctrees, itree)
 
 
 if __name__ == "__main__":

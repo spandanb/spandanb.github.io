@@ -1,23 +1,4 @@
 art:
-    - image_id: then-there-were-four.png
-      title: Then There Were Four
-      subtext: paper
-      date: 2018
-
-    - image_id: the-carnival.png
-      title: The Carnival
-      # subtext could be the title materials, location, etc
-      subtext: paper
-      date: 2018
-
-    - image_id: you-and-me.png
-      title: You and Me
-      # TODO: to make this text linkable,
-      # the easiest way is to make the text interpretable
-      # e.g. markdown mechanism for creating a [text](link_address)
-      subtext: Paper, inspired by the work of Hari and Deepti
-      date: 2018
-
     - image_id: discernment.jpg
       title: Discernment
       subtext: Discernment will lead to different choices
@@ -30,16 +11,16 @@ art:
 
     - image_id: pane1-sprouting.jpg
       title: Sprouting/Birthing
-      subtext: The sprouting/birthing of humanity.
+      subtext: The sprouting/birthing of humanity
       date: 2019-1
 
     - image_id: pane2-unknown.jpg
       title: Face to face with the great unknown
-      subtext: The sprouting/birthing of humanity.
+      subtext: The sprouting/birthing of humanity
       date: 2019-1
 
     - image_id: pane3-homo-erectus.jpg
-      title: Getting Erect.
+      title: Getting Erect
       subtext: Straightening the gait
       date: 2019-1
 
@@ -55,12 +36,30 @@ art:
 
     - image_id: pane6-civilization.jpg
       title: Civilization Emerges
-      subtext: This is now.
+      subtext: This is now
       date: 2019-1
 
+    - image_id: you-and-me.png
+      title: You and Me
+      # TODO: to make this text linkable,
+      # the easiest way is to make the text interpretable
+      # e.g. markdown mechanism for creating a [text](link_address)
+      subtext: Paper, inspired by the work of Hari and Deepti
+      date: 2015-05-22
+
+    - image_id: the-carnival.png
+      title: The Carnival
+      # subtext could be the title materials, location, etc
+      subtext: paper
+      date: 2015-02-20
+
+    - image_id: then-there-were-four.png
+      title: Then There Were Four
+      subtext: paper
+      date: 2014-11-25
 
 photography:
     - image_id: magpie.jpg
       title: Magpie in Banff
       subtext: Banff
-      date: 2020
+      date: 2020-10-11

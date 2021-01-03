@@ -14,8 +14,12 @@
             <div class="row mb-5">
                 <div class="col col-lg-8 col-xl-8">
                     <img class="img-thumbnail" src="{{item.rel_location}}" alt="Card Image">
-                    <p>{{item.title}}, </p>
+                    <h4>{{item.title}} </h4>
+                    <p>{{item.date}}</p>
+
+                    {% if item.subtext %}
                     <p>{{item.subtext}}</p>
+                    {% endif %}
                 </div>
             </div>
         {% endfor %}
