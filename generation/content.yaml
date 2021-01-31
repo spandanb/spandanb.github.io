@@ -27,7 +27,7 @@ essays:
       image_attribution: Image by <a href="https://pixabay.com/users/romanticfatman-5414736/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2500919">Lerkrat Tangsri</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2500919">Pixabay</a>
 
 poetry:
-    - title: My Human Condition 
+    - title: My Human Condition
       date: 2021-1-26
       content_id: my-human-condition.txt
       template_id: content-image.jinja.html
@@ -79,8 +79,14 @@ poetry:
       image_attribution: Image by <a href="https://pixabay.com/users/stocksnap-894430/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2572197">StockSnap</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2572197">Pixabay</a>
 
 
-
 random-thoughts:
+    - title: Our Interface
+      date: 2021-1-31
+      content_id: our-interface.txt
+      template_id: content-image.jinja.html
+      image_id: align-fingers.jpg
+      image_attribution: Image by <a href="https://pixabay.com/users/publicdomainpictures-14/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=71282">PublicDomainPictures</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=71282">Pixabay</a>
+
     - title: Awareness and The Ego
       date: 2020-12-28
       content_id: awareness-and-ego.txt
