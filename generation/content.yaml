@@ -27,9 +27,9 @@ essays:
       image_attribution: Image by <a href="https://pixabay.com/users/romanticfatman-5414736/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2500919">Lerkrat Tangsri</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2500919">Pixabay</a>
 
 poetry:
-    - title: Life and Death
+    - title: My Human Condition 
       date: 2021-1-26
-      content_id: life-and-death.txt
+      content_id: my-human-condition.txt
       template_id: content-image.jinja.html
       image_id: fisherman.jpg
       image_attribution: Image by <a href="https://pixabay.com/users/trilemedia-18833692/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=5893401">Tri Le</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=5893401">Pixabay</a>
