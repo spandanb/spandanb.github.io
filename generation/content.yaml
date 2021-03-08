@@ -1,5 +1,12 @@
 # NB: ensure all content (image content included) is listed in a reverse chronological order.
 essays:
+    - title: The Layers of Freedom
+      date: 2021-03-07
+      content_id: layers-of-freedom.txt
+      template_id: content-image.jinja.html
+      image_id: mountains-birds.jpg
+      image_attribution: Image by <a href="https://pixabay.com/users/giani-1202/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=100367">Giani Pralea</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=100367">Pixabay</a>
+
     - title: The Imperative to Moral Responsibility
       # date is in format (year-month-day)
       date: 2020-07-14
@@ -80,6 +87,11 @@ poetry:
 
 
 random-thoughts:
+    - title: On Freedom
+      date: 2021-2-20
+      content_id: on-freedom.txt
+      template_id: content-no-image.jinja.html
+
     - title: Our Interface
       date: 2021-1-31
       content_id: our-interface.txt
