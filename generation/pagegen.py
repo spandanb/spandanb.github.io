@@ -299,17 +299,21 @@ class FileManager:
         """
         return self.content_filepath_from_metadata(self.content[section][index])
 
-    def get_prev_content_path(self, section, index) -> str:
+    def get_next_content_path(self, section, index) -> str:
         """
         get the previous content path
+        items are in reverse chronological order, hence
+        next item is at a lower index.
         """
         if index > 0:
+            # next/newer is at a lower index
             return self.get_content_filepath(section, index - 1)
         return "#"
 
-    def get_next_content_path(self, section, index) -> str:
+    def get_prev_content_path(self, section, index) -> str:
         items = self.content[section]
         if index < len(items) - 1:
+            # previous is at a greater index; due to rev-chronological order
             return self.get_content_filepath(section, index + 1)
         return "#"
 
@@ -543,13 +547,15 @@ def transform_html(
 
             # set prev, next links
             # set prev
-            if idx != 0:
+            # items are in reverse chronological order
+            # item at item 0 is the newest
+            if idx != len(trees) - 1:
                 prev_fpath = get_relpath(
                     file_manager.get_prev_content_path(section, idx)
                 )
                 tree.find_node_with_id("prev_link").set_attr("href", prev_fpath)
             # set next
-            if idx != len(trees) - 1:
+            if idx != 0:
                 next_fpath = get_relpath(
                     file_manager.get_next_content_path(section, idx)
                 )
