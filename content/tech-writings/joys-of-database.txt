@@ -1,0 +1,35 @@
+﻿
+I recently attempted to implement a database from scratch. Here are my best arguments for why everyone should attempt to do a deeply engaging self-initiated project like this.
+
+
+Why do it?
+* Databases are incredibly rich in the number of computer science and engineering areas they touch. 
+   * Language: We need to think about the query language- and this involves the aesthetics/syntax/semantics of the language and it’s implementation. 
+      * The traditional SQL stack was one model; but there are other alternatives, e.g. functional (hadoop, spark)
+      * Is the language more declarative or imperative
+         * this is not a binary; sql plan’s can be influenced with user specified hints, and imperative expressions may be optimized by the executor (analogous to a compiler)
+      * what is the undefined behavior of the language
+   * Data Representation
+      * underlying storage semantics can be quite varied. 
+         * is this basic abstraction of representation and computation a table of rows, a time-stream of events, a graph
+         * what data types are supported
+            * int, float, string
+         * can the user define new data types
+   * Computation Model
+      * what computations are supported
+      * what operations can’t be expressed, or are prohibitively expensive or complex
+   * Synergy
+      * The interface and synergy between query definition, data representation, and computation layers is with respect to some (but not all ) use cases. What use cases is it efficient and ergonomic to use for 
+   * Concurrency and Consistency
+      * Can multiple users/sessions manipulating the data lead to consistency issues
+      * What are consistency issues
+   * Resource Management
+      * How is memory and storage managed
+   * Replication and Partitioning
+* This was an experiment in the fun criteria
+   * Non-coercive motivation - intrinsically interested in building and learning
+   * No time bounds
+   * Good way to see how I would reason about certain design decisions
+* Mature field with solid benchmarks and theory
+   * much to compare against and learn from
+   * yet the fundamentals of an information processing system, e.g. the different components, the layers of abstractions, the different subproblems apply to a broad class of systems and problems

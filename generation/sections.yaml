@@ -2,7 +2,10 @@
 # NOTE: template_id for image and non-image listings are different
 about:
 
-tech:
+tech-writings:
+    section_title: Tech Writings
+    subtext:
+    template_id: listing-jumbotron-no-image.jinja.html
 
 essays:
     section_title: Essays

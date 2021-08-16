@@ -1,4 +1,10 @@
 # NB: ensure all content (image content included) is listed in a reverse chronological order.
+tech-writings:
+  - title: On the joys of implementing a database project from scratch
+    date: 2021-08-14
+    content_id: joys-of-database.txt
+    template_id: content-no-image.jinja.html
+
 essays:
     - title: The Layers of Freedom
       date: 2021-03-07

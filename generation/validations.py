@@ -92,6 +92,7 @@ def run_validations(
     print(f"comparing {gen_page}, {index_fpath}")
     # get diff
     navdiff = treediff.compare(idx_nav, gen_nav)
+    # uncomment to pretty print diff
     # treediff.pretty_print_diff(navdiff)
     for subdiff in navdiff:
         if isinstance(subdiff, treediff.UpdateAttrib):
